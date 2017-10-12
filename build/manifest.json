@@ -1,0 +1,16 @@
+{
+	"manifest_version": 2,
+	"name": "Github enhancements",
+	"version": "0.0.0.1",
+	"author": "Paul Diaz",
+	"background": {
+		"scripts": ["js/hot-reload.js"]
+	},
+	"content_scripts": [
+		{
+			"matches": ["https://github.com/*"],
+			"js": ["js/app.js"]
+		}
+	],
+	"permissions": ["webNavigation", "tabs", "activeTab"]
+}
