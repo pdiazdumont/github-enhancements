@@ -6,10 +6,17 @@ const constants = {
 		"notifications",
 		"showcases",
 		"trending",
+		"organizations",
+		"new",
 		"search",
 		"watching",
 		"explore",
-	]
+		"contact",
+		"features",
+		"blog",
+		"about",
+	],
+	"GITHUB_API_TREE": 'https://api.github.com/repos/${username}/${repository}/git/trees/${branch}?recursive=1'
 }
 
 export default constants;

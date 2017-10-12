@@ -1,11 +1,12 @@
 import constants from "./../constants"
 
 const detectionUtils = {
-	isTreeExplorer: () => {
+	isCodeExplorer: () => {
 		const url = window.location.pathname
 		let urlParts = url.split('/')
 		urlParts.shift()
-		return (constants.GITHUB_RESERVED_PATHS.indexOf(urlParts[0]) === -1 && url.test())
+		return (constants.GITHUB_RESERVED_PATHS.indexOf(urlParts[0]) === -1 &&
+		/\/[a-zA-Z-_.]+\/[a-zA-Z-_.]+\/(tree|blob|find)\/[a-zA-Z-_.]+(\/[a-zA-Z-_.]+)+/.test(url))
 	},
 	getUsernameAndRepo: () => {
 		let urlParts = window.location.pathname.split('/')

@@ -11,5 +11,6 @@
 			"matches": ["https://github.com/*"],
 			"js": ["js/app.js"]
 		}
-	]
+	],
+	"permissions": ["webNavigation", "tabs", "activeTab"]
 }

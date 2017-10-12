@@ -4,7 +4,8 @@ const versionFilePlugin = require('webpack-version-file-plugin');
 module.exports = {
 	entry: {
 		app: "./src/app.js",
-		"hot-reload": "./src/hot-reload.js"
+		"hot-reload": "./src/hot-reload.js",
+		"background": "./src/background.js"
 	},
 	output: {
 		path: path.resolve(__dirname, "../build"),
