@@ -1,10 +1,10 @@
 import constants from "./../constants"
 
-const getRepositoryTree = (username, repository, branch = 'master') => {
-	fetch(eval('`' + constants.GITHUB_API_TREE + '`'))
+const getRepositoryContent = (username, repository, path = '', branch = 'master') => {
+	return fetch(eval('`' + constants.GITHUB_API_CONTENT + '`'))
 		.then((response) => {
 			if (response.ok) {
-				console.log(response)
+				return response.json()
 			} else {
 				console.error('WRONG RESPONSE')
 			}
@@ -14,4 +14,18 @@ const getRepositoryTree = (username, repository, branch = 'master') => {
 		})
 }
 
-export { getRepositoryTree }
+const getRepositoryTree = (username, repository, branch = 'master') => {
+	return fetch(eval('`' + constants.GITHUB_API_TREE + '`'))
+		.then((response) => {
+			if (response.ok) {
+				return response.json()
+			} else {
+				console.error('WRONG RESPONSE')
+			}
+		})
+		.catch((error) => {
+			console.error(error)
+		})
+}
+
+export { getRepositoryContent, getRepositoryTree }
