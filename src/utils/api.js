@@ -1,6 +1,6 @@
 import constants from "./../constants"
 
-const getRepositoryContent = (username, repository, path = '', branch = 'master') => {
+const getRepositoryContent = (username, repository, branch = 'master', path = '') => {
 	return fetch(eval('`' + constants.GITHUB_API_CONTENT + '`'))
 		.then((response) => {
 			if (response.ok) {
