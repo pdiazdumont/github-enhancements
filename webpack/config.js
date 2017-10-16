@@ -15,6 +15,14 @@ module.exports = {
 	watch: true,
 	module: {
 		rules: [
+			{
+				test: /\.scss$/,
+				use: [
+					{ loader: "style-loader" },
+					{ loader: "css-loader" },
+					{ loader: "sass-loader" }
+				]
+			},
 			{ test: /\.js$/, use: "babel-loader", exclude: "/node_modules" }
 		]
 	},
