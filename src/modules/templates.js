@@ -1,61 +1,20 @@
 const templates = {
-	"DOWNLOAD_LINK": "<a href=\"\">DOWNLOAD</a>",
-	"REPOSITORY_ITEM": `
-		<div class="col-12 d-block width-full py-4 border-bottom">
-			<div class="d-inline-block mb-1">
-				<h3>
-					<a href="/laravel/laravel">
-						<span class="text-normal">laravel / </span>laravel
-					</a>
-				</h3>
-			</div>
-			<div class="float-right">
-				<div class="js-toggler-container js-social-container starring-container on">
-					<form accept-charset="UTF-8" action="/laravel/laravel/unstar" class="starred js-social-form" method="post">
-						<div style="margin:0;padding:0;display:inline">
-							<input name="utf8" type="hidden" value="✓">
-							<input name="authenticity_token" type="hidden" value="VnH+bQGMVf4agT0IT3sbkNE13FLwFCPLE68nan5vna84w+NgSpzIHISbLZDVVQv+zWtlZGTNyJxBc/6lusPn4g==">
-						</div>
-						<button type="submit" class="btn btn-sm  js-toggler-target" aria-label="Unstar this repository" title="Unstar laravel/laravel" data-ga-click="Repository, click unstar button, action:users#show; text:Unstar">
-							<svg aria-hidden="true" class="octicon octicon-star" height="16" version="1.1" viewBox="0 0 14 16" width="14"><path fill-rule="evenodd" d="M14 6l-4.9-.64L7 1 4.9 5.36 0 6l3.6 3.26L2.67 14 7 11.67 11.33 14l-.93-4.74z"></path></svg>
-							Unstar
-						</button>
-					</form>
-					<form accept-charset="UTF-8" action="/laravel/laravel/star" class="unstarred js-social-form" method="post">
-						<div style="margin:0;padding:0;display:inline">
-							<input name="utf8" type="hidden" value="✓">
-							<input name="authenticity_token" type="hidden" value="V/tGNBsV2U5Zs4aVl+1bovZPQrM6s8mNdo0+CeFO0PBtl8jcD4dXg4F9JHyygB7Mbka9qpS7ZBU935EPxfWsVg==">
-						</div>
-						<button type="submit" class="btn btn-sm  js-toggler-target" aria-label="Star this repository" title="Star laravel/laravel" data-ga-click="Repository, click star button, action:users#show; text:Star">
-							<svg aria-hidden="true" class="octicon octicon-star" height="16" version="1.1" viewBox="0 0 14 16" width="14"><path fill-rule="evenodd" d="M14 6l-4.9-.64L7 1 4.9 5.36 0 6l3.6 3.26L2.67 14 7 11.67 11.33 14l-.93-4.74z"></path></svg>
-							Star
-						</button>
-					</form>
-				</div>
-			</div>
-			<div class="py-1">
-				<p class="d-inline-block col-9 text-gray pr-4" itemprop="description">A PHP Framework For Web Artisans</p>
-			</div>
-			<div class="f6 text-gray mt-2">
-				<span class="repo-language-color ml-0" style="background-color:#4F5D95;"></span>
-				<span class="mr-3" itemprop="programmingLanguage">PHP</span>
-				<a class="muted-link mr-3" href="/laravel/laravel/stargazers">
-					<svg aria-label="star" class="octicon octicon-star" height="16" role="img" version="1.1" viewBox="0 0 14 16" width="14"><path fill-rule="evenodd" d="M14 6l-4.9-.64L7 1 4.9 5.36 0 6l3.6 3.26L2.67 14 7 11.67 11.33 14l-.93-4.74z"></path></svg>
-					35,471
-				</a>
-				<a class="muted-link mr-3" href="/laravel/laravel/network">
-					<svg aria-label="fork" class="octicon octicon-repo-forked" height="16" role="img" version="1.1" viewBox="0 0 10 16" width="10"><path fill-rule="evenodd" d="M8 1a1.993 1.993 0 0 0-1 3.72V6L5 8 3 6V4.72A1.993 1.993 0 0 0 2 1a1.993 1.993 0 0 0-1 3.72V6.5l3 3v1.78A1.993 1.993 0 0 0 5 15a1.993 1.993 0 0 0 1-3.72V9.5l3-3V4.72A1.993 1.993 0 0 0 8 1zM2 4.2C1.34 4.2.8 3.65.8 3c0-.65.55-1.2 1.2-1.2.65 0 1.2.55 1.2 1.2 0 .65-.55 1.2-1.2 1.2zm3 10c-.66 0-1.2-.55-1.2-1.2 0-.65.55-1.2 1.2-1.2.65 0 1.2.55 1.2 1.2 0 .65-.55 1.2-1.2 1.2zm3-10c-.66 0-1.2-.55-1.2-1.2 0-.65.55-1.2 1.2-1.2.65 0 1.2.55 1.2 1.2 0 .65-.55 1.2-1.2 1.2z"></path></svg>
-					11,643
-				</a>
-				Updated <relative-time datetime="2017-10-10T12:13:53Z" title="Oct 10, 2017, 7:13 AM GMT-5">11 hours ago</relative-time>
-			</div>
-			<div class="f6 text-gray mt-2">
-				<a class="muted-link mr-3" href="">
-					Tools
-				</a>
-			</div>
-		</div>
-	`
+	"DOWNLOAD_NODE": '<a href="https://raw.githubusercontent.com/${username}/${repository}/${branch}/${path}/${fileName}" class="tooltipped tooltipped-n" aria-label="Download file" download><svg aria-hidden="true" class="octicon octicon-cloud-download" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M9 12h2l-3 3-3-3h2V7h2v5zm3-8c0-.44-.91-3-4.5-3C5.08 1 3 2.92 3 5 1.02 5 0 6.52 0 8c0 1.53 1 3 3 3h3V9.7H3C1.38 9.7 1.3 8.28 1.3 8c0-.17.05-1.7 1.7-1.7h1.3V5c0-1.39 1.56-2.7 3.2-2.7 2.55 0 3.13 1.55 3.2 1.8v1.2H12c.81 0 2.7.22 2.7 2.2 0 2.09-2.25 2.2-2.7 2.2h-2V11h2c2.08 0 4-1.16 4-3.5C16 5.06 14.08 4 12 4z"></path></svg></a>',
+	"FILE_NODE": '<span>${bytes} ${text}</span>'
 }
 
-export default templates;
+function formatter(literals, ...substitutions) {
+    return {
+        format: function() {
+            var out = [];
+            for(var i=0, k=0; i < literals.length; i++) {
+                out[k++] = literals[i];
+                out[k++] = arguments[substitutions[i]];
+            }
+            out[k] = literals[i];
+            return out.join("");
+        }
+    };
+}
+
+export { templates }

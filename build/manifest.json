@@ -9,7 +9,8 @@
 	"content_scripts": [
 		{
 			"matches": ["https://github.com/*"],
-			"js": ["js/app.js"]
+			"js": ["js/app.js"],
+			"run_at": "document_end"
 		}
 	],
 	"permissions": ["webNavigation", "tabs", "activeTab"]
