@@ -26,7 +26,7 @@ const getUsernameAndRepo = () => {
 	return false
 }
 
-const getRepositoryInformation = () => {
+const getRepositoryParameters = () => {
 	if (isCodeExplorer()) {
 		const url = window.location.pathname
 		let urlParts = url.split('/')
@@ -51,4 +51,4 @@ const getRepositoryInformation = () => {
 	return false
 }
 
-export { isCodeExplorer, getUsernameAndRepo, getRepositoryInformation }
+export { isCodeExplorer, getUsernameAndRepo, getRepositoryParameters }
