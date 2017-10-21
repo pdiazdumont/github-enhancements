@@ -60,7 +60,7 @@
 /******/ 	__webpack_require__.p = "";
 /******/
 /******/ 	// Load entry module and return exports
-/******/ 	return __webpack_require__(__webpack_require__.s = 0);
+/******/ 	return __webpack_require__(__webpack_require__.s = 1);
 /******/ })
 /************************************************************************/
 /******/ ([
@@ -70,24 +70,43 @@
 "use strict";
 
 
-var _styles = __webpack_require__(1);
+Object.defineProperty(exports, "__esModule", {
+	value: true
+});
+var constants = {
+	"GITHUB_RESERVED_PATHS": ["marketplace", "issues", "pulls", "notifications", "showcases", "trending", "organizations", "new", "search", "watching", "explore", "contact", "features", "blog", "about"],
+	"GITHUB_API_INFORMATION": "https://api.github.com/repos/${username}/${repository}",
+	"GITHUB_API_CONTENT": 'https://api.github.com/repos/${username}/${repository}/contents/${path}?ref=${branch}',
+	"GITHUB_API_TREE": 'https://api.github.com/repos/${username}/${repository}/git/trees/${branch}?recursive=1'
+};
+
+exports.default = constants;
+
+/***/ }),
+/* 1 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+var _styles = __webpack_require__(2);
 
 var _styles2 = _interopRequireDefault(_styles);
 
-var _sizeModule = __webpack_require__(9);
+var _sizeModule = __webpack_require__(7);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 _sizeModule.module.init();
 
 /***/ }),
-/* 1 */
+/* 2 */
 /***/ (function(module, exports, __webpack_require__) {
 
 // style-loader: Adds some css to the DOM by adding a <style> tag
 
 // load the styles
-var content = __webpack_require__(2);
+var content = __webpack_require__(3);
 if(typeof content === 'string') content = [[module.i, content, '']];
 // Prepare cssTransformation
 var transform;
@@ -95,7 +114,7 @@ var transform;
 var options = {"hmr":true}
 options.transform = transform
 // add the styles to the DOM
-var update = __webpack_require__(4)(content, options);
+var update = __webpack_require__(5)(content, options);
 if(content.locals) module.exports = content.locals;
 // Hot Module Replacement
 if(false) {
@@ -112,10 +131,10 @@ if(false) {
 }
 
 /***/ }),
-/* 2 */
+/* 3 */
 /***/ (function(module, exports, __webpack_require__) {
 
-exports = module.exports = __webpack_require__(3)(undefined);
+exports = module.exports = __webpack_require__(4)(undefined);
 // imports
 
 
@@ -126,7 +145,7 @@ exports.push([module.i, "td.file-size {\n  color: #6a737d;\n  text-align: right;
 
 
 /***/ }),
-/* 3 */
+/* 4 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -208,7 +227,7 @@ function toComment(sourceMap) {
 }
 
 /***/ }),
-/* 4 */
+/* 5 */
 /***/ (function(module, exports, __webpack_require__) {
 
 /*
@@ -264,7 +283,7 @@ var singleton = null;
 var	singletonCounter = 0;
 var	stylesInsertedAtTop = [];
 
-var	fixUrls = __webpack_require__(5);
+var	fixUrls = __webpack_require__(6);
 
 module.exports = function(list, options) {
 	if (typeof DEBUG !== "undefined" && DEBUG) {
@@ -580,7 +599,7 @@ function updateLink (link, options, obj) {
 
 
 /***/ }),
-/* 5 */
+/* 6 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -675,28 +694,7 @@ module.exports = function (css) {
 };
 
 /***/ }),
-/* 6 */,
-/* 7 */,
-/* 8 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-	value: true
-});
-var constants = {
-	"GITHUB_RESERVED_PATHS": ["marketplace", "issues", "pulls", "notifications", "showcases", "trending", "organizations", "new", "search", "watching", "explore", "contact", "features", "blog", "about"],
-	"GITHUB_API_INFORMATION": "https://api.github.com/repos/${username}/${repository}",
-	"GITHUB_API_CONTENT": 'https://api.github.com/repos/${username}/${repository}/contents/${path}?ref=${branch}',
-	"GITHUB_API_TREE": 'https://api.github.com/repos/${username}/${repository}/git/trees/${branch}?recursive=1'
-};
-
-exports.default = constants;
-
-/***/ }),
-/* 9 */
+/* 7 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -709,15 +707,15 @@ exports.module = undefined;
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-var _detection = __webpack_require__(10);
+var _detection = __webpack_require__(8);
 
 var detection = _interopRequireWildcard(_detection);
 
-var _api = __webpack_require__(12);
+var _api = __webpack_require__(10);
 
 var api = _interopRequireWildcard(_api);
 
-var _templates = __webpack_require__(13);
+var _templates = __webpack_require__(11);
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
@@ -734,9 +732,23 @@ var sizeModule = function () {
 		key: 'init',
 		value: function init() {
 			if (this.repositoryParameters) {
-				var repositoryContent = api.getRepositoryContent(this.repositoryParameters.username, this.repositoryParameters.repository, this.repositoryParameters.branch, this.repositoryParameters.path);
-				repositoryContent.then(this.groupAndSortElements.bind(this)).then(this.processElements.bind(this)).then(this.showRepositorySize.bind(this));
+				var repositoryInformation = api.getRepositoryInformation(this.repositoryParameters.username, this.repositoryParameters.repository).then(this.setup.bind(this)).then(this.showRepositorySize.bind(this)).then(this.getContent.bind(this));
 			}
+		}
+	}, {
+		key: 'setup',
+		value: function setup(response) {
+			this.repositoryParameters.branch = response.default_branch;
+			this.repositoryParameters.size = response.size;
+			return new Promise(function (resolve, reject) {
+				resolve(response);
+			});
+		}
+	}, {
+		key: 'getContent',
+		value: function getContent(response) {
+			var repositoryContent = api.getRepositoryContent(this.repositoryParameters.username, this.repositoryParameters.repository, this.repositoryParameters.branch, this.repositoryParameters.path);
+			repositoryContent.then(this.groupAndSortElements.bind(this)).then(this.processElements.bind(this));
 		}
 	}, {
 		key: 'groupAndSortElements',
@@ -803,7 +815,7 @@ var sizeModule = function () {
 					var sizeInformation = _this.getReadableSizeUnit(item.size);
 					fileSizeNode.innerHTML = '<span>' + sizeInformation.bytes + ' ' + sizeInformation.text + '</span>';
 					fileSizeNode.classList.add('file-size');
-					downloadFileNode.innerHTML = '\n\t\t\t\t\t<a href="https://raw.githubusercontent.com/' + _this.repositoryParameters.username + '/' + _this.repositoryParameters.repository + '/' + _this.repositoryParameters.branch + '/' + _this.repositoryParameters.path + '/' + item.name + '" class="tooltipped tooltipped-n" aria-label="Download file" download>\n\t\t\t\t\t\t<svg aria-hidden="true" class="octicon octicon-cloud-download" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M9 12h2l-3 3-3-3h2V7h2v5zm3-8c0-.44-.91-3-4.5-3C5.08 1 3 2.92 3 5 1.02 5 0 6.52 0 8c0 1.53 1 3 3 3h3V9.7H3C1.38 9.7 1.3 8.28 1.3 8c0-.17.05-1.7 1.7-1.7h1.3V5c0-1.39 1.56-2.7 3.2-2.7 2.55 0 3.13 1.55 3.2 1.8v1.2H12c.81 0 2.7.22 2.7 2.2 0 2.09-2.25 2.2-2.7 2.2h-2V11h2c2.08 0 4-1.16 4-3.5C16 5.06 14.08 4 12 4z"></path></svg>\n\t\t\t\t\t</a>';
+					downloadFileNode.innerHTML = '\n\t\t\t\t\t<a href="' + item.download_url + '" class="tooltipped tooltipped-n" aria-label="Download file" download>\n\t\t\t\t\t\t<svg aria-hidden="true" class="octicon octicon-cloud-download" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M9 12h2l-3 3-3-3h2V7h2v5zm3-8c0-.44-.91-3-4.5-3C5.08 1 3 2.92 3 5 1.02 5 0 6.52 0 8c0 1.53 1 3 3 3h3V9.7H3C1.38 9.7 1.3 8.28 1.3 8c0-.17.05-1.7 1.7-1.7h1.3V5c0-1.39 1.56-2.7 3.2-2.7 2.55 0 3.13 1.55 3.2 1.8v1.2H12c.81 0 2.7.22 2.7 2.2 0 2.09-2.25 2.2-2.7 2.2h-2V11h2c2.08 0 4-1.16 4-3.5C16 5.06 14.08 4 12 4z"></path></svg>\n\t\t\t\t\t</a>';
 					downloadFileNode.classList.add('file-download');
 				}
 
@@ -815,18 +827,12 @@ var sizeModule = function () {
 		}
 	}, {
 		key: 'showRepositorySize',
-		value: function showRepositorySize(elements) {
-			var _this2 = this;
-
-			var repositoryTree = api.getRepositoryInformation(this.repositoryParameters.username, this.repositoryParameters.repository);
-
-			repositoryTree.then(function (response) {
-				var sizeInformation = _this2.getReadableSizeUnit(response.size, true);
-				var container = document.querySelector('.numbers-summary');
-				var repositorySizeNode = document.createElement('li');
-				repositorySizeNode.innerHTML = '<svg class="octicon octicon-database" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path d="M6 15c-3.31 0-6-.9-6-2v-2c0-.17.09-.34.21-.5.67.86 3 1.5 5.79 1.5s5.12-.64 5.79-1.5c.13.16.21.33.21.5v2c0 1.1-2.69 2-6 2zm0-4c-3.31 0-6-.9-6-2V7c0-.11.04-.21.09-.31.03-.06.07-.13.12-.19C.88 7.36 3.21 8 6 8s5.12-.64 5.79-1.5c.05.06.09.13.12.19.05.1.09.21.09.31v2c0 1.1-2.69 2-6 2zm0-4c-3.31 0-6-.9-6-2V3c0-1.1 2.69-2 6-2s6 .9 6 2v2c0 1.1-2.69 2-6 2zm0-5c-2.21 0-4 .45-4 1s1.79 1 4 1 4-.45 4-1-1.79-1-4-1z"></path></svg><span class="num text-emphasized">' + sizeInformation.bytes + '</span> ' + sizeInformation.text;
-				container.appendChild(repositorySizeNode);
-			});
+		value: function showRepositorySize(response) {
+			var sizeInformation = this.getReadableSizeUnit(this.repositoryParameters.size, true);
+			var container = document.querySelector('.numbers-summary');
+			var repositorySizeNode = document.createElement('li');
+			repositorySizeNode.innerHTML = '<svg class="octicon octicon-database" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path d="M6 15c-3.31 0-6-.9-6-2v-2c0-.17.09-.34.21-.5.67.86 3 1.5 5.79 1.5s5.12-.64 5.79-1.5c.13.16.21.33.21.5v2c0 1.1-2.69 2-6 2zm0-4c-3.31 0-6-.9-6-2V7c0-.11.04-.21.09-.31.03-.06.07-.13.12-.19C.88 7.36 3.21 8 6 8s5.12-.64 5.79-1.5c.05.06.09.13.12.19.05.1.09.21.09.31v2c0 1.1-2.69 2-6 2zm0-4c-3.31 0-6-.9-6-2V3c0-1.1 2.69-2 6-2s6 .9 6 2v2c0 1.1-2.69 2-6 2zm0-5c-2.21 0-4 .45-4 1s1.79 1 4 1 4-.45 4-1-1.79-1-4-1z"></path></svg><span class="num text-emphasized">' + sizeInformation.bytes + '</span> ' + sizeInformation.text;
+			container.appendChild(repositorySizeNode);
 		}
 	}, {
 		key: 'allElementsAreFolders',
@@ -870,7 +876,7 @@ var _module = new sizeModule();
 exports.module = _module;
 
 /***/ }),
-/* 10 */
+/* 8 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -881,11 +887,11 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.getRepositoryParameters = exports.getUsernameAndRepo = exports.isCodeExplorer = undefined;
 
-var _constants = __webpack_require__(8);
+var _constants = __webpack_require__(0);
 
 var _constants2 = _interopRequireDefault(_constants);
 
-var _xregexpAll = __webpack_require__(11);
+var _xregexpAll = __webpack_require__(9);
 
 var _xregexpAll2 = _interopRequireDefault(_xregexpAll);
 
@@ -940,7 +946,7 @@ exports.getUsernameAndRepo = getUsernameAndRepo;
 exports.getRepositoryParameters = getRepositoryParameters;
 
 /***/ }),
-/* 11 */
+/* 9 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -5059,7 +5065,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
 });
 
 /***/ }),
-/* 12 */
+/* 10 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -5070,7 +5076,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 exports.getRepositoryTree = exports.getRepositoryContent = exports.getRepositoryInformation = undefined;
 
-var _constants = __webpack_require__(8);
+var _constants = __webpack_require__(0);
 
 var _constants2 = _interopRequireDefault(_constants);
 
@@ -5117,7 +5123,7 @@ exports.getRepositoryContent = getRepositoryContent;
 exports.getRepositoryTree = getRepositoryTree;
 
 /***/ }),
-/* 13 */
+/* 11 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
