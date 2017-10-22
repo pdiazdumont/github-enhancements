@@ -74,7 +74,8 @@ Object.defineProperty(exports, "__esModule", {
 	value: true
 });
 var constants = {
-	"GITHUB_RESERVED_PATHS": ["marketplace", "issues", "pulls", "notifications", "showcases", "trending", "organizations", "new", "search", "watching", "explore", "contact", "features", "blog", "about"],
+	"GITHUB_ROOT_RESERVED_PATHS": ["marketplace", "issues", "pulls", "notifications", "showcases", "trending", "organizations", "new", "search", "watching", "explore", "contact", "features", "blog", "about"],
+	"GITHUB_CODE_EXPLORER_RESERVED_PATHS": ["commits", "community", "graphs", "issues", "labels", "milestones", "network", "projects", "pulls", "pulse", "wiki"],
 	"GITHUB_API_INFORMATION": "https://api.github.com/repos/${username}/${repository}",
 	"GITHUB_API_CONTENT": 'https://api.github.com/repos/${username}/${repository}/contents/${path}?ref=${branch}',
 	"GITHUB_API_TREE": 'https://api.github.com/repos/${username}/${repository}/git/trees/${branch}?recursive=1'
@@ -98,6 +99,14 @@ var _sizeModule = __webpack_require__(7);
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 _sizeModule.module.init();
+
+chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
+	window.location.reload();
+});
+
+chrome.runtime.sendMessage({
+	text: 'Generic.TabUpdated'
+});
 
 /***/ }),
 /* 2 */
@@ -715,8 +724,6 @@ var _api = __webpack_require__(10);
 
 var api = _interopRequireWildcard(_api);
 
-var _templates = __webpack_require__(11);
-
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -738,8 +745,11 @@ var sizeModule = function () {
 	}, {
 		key: 'setup',
 		value: function setup(response) {
-			this.repositoryParameters.branch = response.default_branch;
+			if (!this.repositoryParameters.branch) {
+				this.repositoryParameters.branch = response.default_branch;
+			}
 			this.repositoryParameters.size = response.size;
+
 			return new Promise(function (resolve, reject) {
 				resolve(response);
 			});
@@ -748,7 +758,17 @@ var sizeModule = function () {
 		key: 'getContent',
 		value: function getContent(response) {
 			var repositoryContent = api.getRepositoryContent(this.repositoryParameters.username, this.repositoryParameters.repository, this.repositoryParameters.branch, this.repositoryParameters.path);
-			repositoryContent.then(this.groupAndSortElements.bind(this)).then(this.processElements.bind(this));
+			repositoryContent.then(this.shouldContinue.bind(this)).then(this.groupAndSortElements.bind(this)).then(this.processElements.bind(this)).catch(function (error) {});
+		}
+	}, {
+		key: 'shouldContinue',
+		value: function shouldContinue(response) {
+			if (response.type === 'file') {
+				throw new Error('');
+			}
+			return new Promise(function (resolve, reject) {
+				resolve(response);
+			});
 		}
 	}, {
 		key: 'groupAndSortElements',
@@ -805,7 +825,7 @@ var sizeModule = function () {
 				return;
 			}
 
-			var rows = document.querySelectorAll('table.files tbody .js-navigation-item:not(.up-tree)');
+			var nodes = [];
 
 			elements.forEach(function (item, index) {
 				var fileSizeNode = document.createElement('td');
@@ -819,17 +839,39 @@ var sizeModule = function () {
 					downloadFileNode.classList.add('file-download');
 				}
 
-				rows[index].appendChild(fileSizeNode);
-				rows[index].appendChild(downloadFileNode);
+				nodes[item.name] = {
+					size: fileSizeNode,
+					download: downloadFileNode
+				};
 			});
+
+			this.appendNodes(nodes);
 
 			return elements;
 		}
 	}, {
+		key: 'appendNodes',
+		value: function appendNodes(nodes) {
+			var rows = document.querySelectorAll('table.files tbody .js-navigation-item:not(.up-tree)');
+
+			rows.forEach(function (item, index) {
+				var nameNode = item.querySelector('.content > span > a') || item.querySelector('.content > span > span');
+				var name = nameNode.getAttribute('title');
+				var icon = item.querySelector('.icon svg');
+				if ((!/^[a-zA-Z0-9-_.]+ @ [a-zA-Z0-9]+$/.test(name) || icon.classList.contains('octicon-file-submodule')) && nodes[name] != undefined) {
+					item.appendChild(nodes[name].size);
+					item.appendChild(nodes[name].download);
+				}
+			});
+		}
+	}, {
 		key: 'showRepositorySize',
 		value: function showRepositorySize(response) {
-			var sizeInformation = this.getReadableSizeUnit(this.repositoryParameters.size, true);
 			var container = document.querySelector('.numbers-summary');
+			if (container === null) {
+				return;
+			}
+			var sizeInformation = this.getReadableSizeUnit(this.repositoryParameters.size, true);
 			var repositorySizeNode = document.createElement('li');
 			repositorySizeNode.innerHTML = '<svg class="octicon octicon-database" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path d="M6 15c-3.31 0-6-.9-6-2v-2c0-.17.09-.34.21-.5.67.86 3 1.5 5.79 1.5s5.12-.64 5.79-1.5c.13.16.21.33.21.5v2c0 1.1-2.69 2-6 2zm0-4c-3.31 0-6-.9-6-2V7c0-.11.04-.21.09-.31.03-.06.07-.13.12-.19C.88 7.36 3.21 8 6 8s5.12-.64 5.79-1.5c.05.06.09.13.12.19.05.1.09.21.09.31v2c0 1.1-2.69 2-6 2zm0-4c-3.31 0-6-.9-6-2V3c0-1.1 2.69-2 6-2s6 .9 6 2v2c0 1.1-2.69 2-6 2zm0-5c-2.21 0-4 .45-4 1s1.79 1 4 1 4-.45 4-1-1.79-1-4-1z"></path></svg><span class="num text-emphasized">' + sizeInformation.bytes + '</span> ' + sizeInformation.text;
 			container.appendChild(repositorySizeNode);
@@ -898,15 +940,25 @@ var _xregexpAll2 = _interopRequireDefault(_xregexpAll);
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 var isCodeExplorer = function isCodeExplorer() {
-	var url = window.location.pathname;
-	var urlParts = url.split('/');
-	urlParts.shift();
-	return isNotReservedPath() && /\/[a-zA-Z-_.]+\/[a-zA-Z-_.]+(\/(tree|blob|find)\/[a-zA-Z-_.]+(\/[a-zA-Z-_.]+)+)?/.test(url);
+	var expression = '[a-zA-Z0-9-_.]+';
+	var regex = new _xregexpAll2.default('\n\t\t/' + expression + '\n\t\t/' + expression + '\n\t\t((\n\t\t\t/(tree|blob)\n\t\t\t/' + expression + '\n\t\t\t((/' + expression + ')+)?\n\t\t)+|\n\t\t/(?<discriminator> ' + expression + ' -?))|$\n\t', 'x');
+
+	var match = _xregexpAll2.default.exec(window.location.pathname, regex);
+
+	if (match.discriminator === undefined) {
+		return true;
+	}
+
+	if (_constants2.default.GITHUB_CODE_EXPLORER_RESERVED_PATHS.indexOf(match.discriminator) === -1) {
+		return true;
+	}
+
+	return false;
 };
 
-var isNotReservedPath = function isNotReservedPath() {
+var isNotRootReservedPath = function isNotRootReservedPath() {
 	var urlParts = window.location.pathname.split('/');
-	return _constants2.default.GITHUB_RESERVED_PATHS.indexOf(urlParts[1]) === -1;
+	return _constants2.default.GITHUB_ROOT_RESERVED_PATHS.indexOf(urlParts[1]) === -1;
 };
 
 var getUsernameAndRepo = function getUsernameAndRepo() {
@@ -927,15 +979,11 @@ var getRepositoryParameters = function getRepositoryParameters() {
 		var urlParts = url.split('/');
 		urlParts.shift();
 
-		var expression = '[a-zA-Z0-9-_.]+';
-		var regex = new _xregexpAll2.default('\n\t\t/(?<username> ' + expression + ') -?\n\t\t/(?<repository> ' + expression + ') -?\n\t\t(/(tree|blob)\n\t\t/(?<branch> ' + expression + ') -?\n\t\t(?<path> (/' + expression + ')+)?)? -?', 'x');
-		var match = _xregexpAll2.default.exec(url, regex);
-
 		return {
-			username: match.username,
-			repository: match.repository,
-			branch: match.branch || 'master',
-			path: match.path ? match.path.substr(1) : ''
+			username: urlParts[0],
+			repository: urlParts[1],
+			branch: urlParts[3],
+			path: urlParts[4] ? url.substr(url.indexOf(urlParts[4])) : ''
 		};
 	}
 	return false;
@@ -5121,41 +5169,6 @@ function json(response) {
 exports.getRepositoryInformation = getRepositoryInformation;
 exports.getRepositoryContent = getRepositoryContent;
 exports.getRepositoryTree = getRepositoryTree;
-
-/***/ }),
-/* 11 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-    value: true
-});
-var templates = {
-    "DOWNLOAD_NODE": '<a href="https://raw.githubusercontent.com/${username}/${repository}/${branch}/${path}/${fileName}" class="tooltipped tooltipped-n" aria-label="Download file" download><svg aria-hidden="true" class="octicon octicon-cloud-download" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M9 12h2l-3 3-3-3h2V7h2v5zm3-8c0-.44-.91-3-4.5-3C5.08 1 3 2.92 3 5 1.02 5 0 6.52 0 8c0 1.53 1 3 3 3h3V9.7H3C1.38 9.7 1.3 8.28 1.3 8c0-.17.05-1.7 1.7-1.7h1.3V5c0-1.39 1.56-2.7 3.2-2.7 2.55 0 3.13 1.55 3.2 1.8v1.2H12c.81 0 2.7.22 2.7 2.2 0 2.09-2.25 2.2-2.7 2.2h-2V11h2c2.08 0 4-1.16 4-3.5C16 5.06 14.08 4 12 4z"></path></svg></a>',
-    "FILE_NODE": '<span>${bytes} ${text}</span>'
-};
-
-function formatter(literals) {
-    for (var _len = arguments.length, substitutions = Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
-        substitutions[_key - 1] = arguments[_key];
-    }
-
-    return {
-        format: function format() {
-            var out = [];
-            for (var i = 0, k = 0; i < literals.length; i++) {
-                out[k++] = literals[i];
-                out[k++] = arguments[substitutions[i]];
-            }
-            out[k] = literals[i];
-            return out.join("");
-        }
-    };
-}
-
-exports.templates = templates;
 
 /***/ })
 /******/ ]);

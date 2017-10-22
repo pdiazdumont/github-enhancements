@@ -1,5 +1,5 @@
 const constants = {
-	"GITHUB_RESERVED_PATHS": [
+	"GITHUB_ROOT_RESERVED_PATHS": [
 		"marketplace",
 		"issues",
 		"pulls",
@@ -15,6 +15,19 @@ const constants = {
 		"features",
 		"blog",
 		"about",
+	],
+	"GITHUB_CODE_EXPLORER_RESERVED_PATHS": [
+		"commits",
+		"community",
+		"graphs",
+		"issues",
+		"labels",
+		"milestones",
+		"network",
+		"projects",
+		"pulls",
+		"pulse",
+		"wiki"
 	],
 	"GITHUB_API_INFORMATION": "https://api.github.com/repos/${username}/${repository}",
 	"GITHUB_API_CONTENT": 'https://api.github.com/repos/${username}/${repository}/contents/${path}?ref=${branch}',

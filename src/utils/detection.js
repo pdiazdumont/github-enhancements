@@ -2,16 +2,34 @@ import constants from "./../constants"
 import XRegExp from 'xregexp/xregexp-all'
 
 const isCodeExplorer = () => {
-	const url = window.location.pathname
-	let urlParts = url.split('/')
-	urlParts.shift()
-	return (isNotReservedPath() &&
-	/\/[a-zA-Z-_.]+\/[a-zA-Z-_.]+(\/(tree|blob|find)\/[a-zA-Z-_.]+(\/[a-zA-Z-_.]+)+)?/.test(url))
+	const expression = '[a-zA-Z0-9-_.]+'
+	const regex = new XRegExp(`
+		\/${expression}
+		\/${expression}
+		((
+			\/(tree|blob)
+			\/${expression}
+			((\/${expression})+)?
+		)+|
+		\/(?<discriminator> ${expression} -?))|$
+	`, 'x')
+
+	const match = XRegExp.exec(window.location.pathname, regex)
+
+	if (match.discriminator === undefined) {
+		return true
+	}
+
+	if (constants.GITHUB_CODE_EXPLORER_RESERVED_PATHS.indexOf(match.discriminator) === -1) {
+		return true
+	}
+
+	return false
 }
 
-const isNotReservedPath = () => {
+const isNotRootReservedPath = () => {
 	const urlParts = window.location.pathname.split('/')
-	return constants.GITHUB_RESERVED_PATHS.indexOf(urlParts[1]) === -1
+	return constants.GITHUB_ROOT_RESERVED_PATHS.indexOf(urlParts[1]) === -1
 }
 
 const getUsernameAndRepo = () => {
@@ -31,21 +49,12 @@ const getRepositoryParameters = () => {
 		const url = window.location.pathname
 		let urlParts = url.split('/')
 		urlParts.shift()
-		
-		const expression = '[a-zA-Z0-9-_.]+'
-		const regex = new XRegExp(`
-		\/(?<username> ${expression}) -?
-		\/(?<repository> ${expression}) -?
-		(\/(tree|blob)
-		\/(?<branch> ${expression}) -?
-		(?<path> (\/${expression})+)?)? -?`, 'x')
-		const match = XRegExp.exec(url, regex)
 
 		return {
-			username: match.username,
-			repository: match.repository,
-			branch: match.branch || 'master',
-			path: match.path ? match.path.substr(1) : ''
+			username: urlParts[0],
+			repository: urlParts[1],
+			branch: urlParts[3],
+			path: urlParts[4] ? url.substr(url.indexOf(urlParts[4])) : ''
 		}
 	}
 	return false

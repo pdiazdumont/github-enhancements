@@ -4,7 +4,7 @@
 	"version": "0.0.0.1",
 	"author": "Paul Diaz",
 	"background": {
-		"scripts": ["js/hot-reload.js"]
+		"scripts": ["js/hot-reload.js", "js/background.js"]
 	},
 	"content_scripts": [
 		{
