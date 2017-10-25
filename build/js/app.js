@@ -748,6 +748,10 @@ var sizeModule = function () {
 			if (!this.repositoryParameters.branch) {
 				this.repositoryParameters.branch = response.default_branch;
 			}
+			var uiSelectedBranch = document.querySelector('.branch-select-menu span').textContent;
+			if (uiSelectedBranch.indexOf('/') !== -1) {
+				this.fixForBranchNameWithSlashes(uiSelectedBranch);
+			}
 			this.repositoryParameters.size = response.size;
 
 			return new Promise(function (resolve, reject) {
@@ -908,6 +912,17 @@ var sizeModule = function () {
 			if (first.name > second.name) return 1;
 			if (first.name < second.name) return -1;
 			return 0;
+		}
+	}, {
+		key: 'fixForBranchNameWithSlashes',
+		value: function fixForBranchNameWithSlashes(branchName) {
+			this.repositoryParameters.branch = branchName;
+
+			var temporal = branchName.split('/');
+			temporal.shift();
+			var pathToReplace = temporal.join('/');
+
+			this.repositoryParameters.path = this.repositoryParameters.path.replace(pathToReplace, '');
 		}
 	}]);
 

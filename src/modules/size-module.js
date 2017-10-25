@@ -21,6 +21,10 @@ class sizeModule {
 		if (!this.repositoryParameters.branch) {
 			this.repositoryParameters.branch = response.default_branch
 		}
+		const uiSelectedBranch = document.querySelector('.branch-select-menu span').textContent
+		if (uiSelectedBranch.indexOf('/') !== -1) {
+			this.fixForBranchNameWithSlashes(uiSelectedBranch)
+		}
 		this.repositoryParameters.size = response.size
 
 		return new Promise((resolve, reject) => {
@@ -162,6 +166,16 @@ class sizeModule {
 		if (first.name > second.name) return 1
 		if (first.name < second.name) return -1
 		return 0
+	}
+
+	fixForBranchNameWithSlashes(branchName) {
+		this.repositoryParameters.branch = branchName
+
+		let temporal = branchName.split('/')
+		temporal.shift()
+		const pathToReplace = temporal.join('/')
+
+		this.repositoryParameters.path = this.repositoryParameters.path.replace(pathToReplace, '')
 	}
 }
 
