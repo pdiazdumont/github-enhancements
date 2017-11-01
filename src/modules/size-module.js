@@ -92,7 +92,7 @@ class sizeModule {
 			const fileSizeNode = document.createElement('td')
 			const downloadFileNode = document.createElement('td')
 	
-			if (item.type == 'file') {
+			if (item.type == 'file' && !this.isSubmodule(item)) {
 				const sizeInformation = this.getReadableSizeUnit(item.size)
 				fileSizeNode.innerHTML = `<span>${sizeInformation.bytes} ${sizeInformation.text}</span>`
 				fileSizeNode.classList.add('file-size')
@@ -121,10 +121,13 @@ class sizeModule {
 			const nameNode = item.querySelector('.content > span > a') || item.querySelector('.content > span > span')
 			const name = nameNode.getAttribute('title')
 			const icon = item.querySelector('.icon svg')
-			if ((!/^[a-zA-Z0-9-_.]+ @ [a-zA-Z0-9]+$/.test(name) || icon.classList.contains('octicon-file-submodule'))
-			&& nodes[name] != undefined) {
+			if (nodes[name] != undefined) {
 				item.appendChild(nodes[name].size)
 				item.appendChild(nodes[name].download)
+			}
+			else {
+				item.appendChild(document.createElement('td'))
+				item.appendChild(document.createElement('td'))
 			}
 		})
 	}
@@ -142,6 +145,10 @@ class sizeModule {
 
 	allElementsAreFolders(element, index, array) {
 		return element.type === 'dir'
+	}
+
+	isSubmodule(element) {
+		return element.type === 'file' && element.download_url === null
 	}
 
 	getReadableSizeUnit(size, isKylo = false) {

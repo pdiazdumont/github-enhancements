@@ -835,7 +835,7 @@ var sizeModule = function () {
 				var fileSizeNode = document.createElement('td');
 				var downloadFileNode = document.createElement('td');
 
-				if (item.type == 'file') {
+				if (item.type == 'file' && !_this.isSubmodule(item)) {
 					var sizeInformation = _this.getReadableSizeUnit(item.size);
 					fileSizeNode.innerHTML = '<span>' + sizeInformation.bytes + ' ' + sizeInformation.text + '</span>';
 					fileSizeNode.classList.add('file-size');
@@ -862,9 +862,12 @@ var sizeModule = function () {
 				var nameNode = item.querySelector('.content > span > a') || item.querySelector('.content > span > span');
 				var name = nameNode.getAttribute('title');
 				var icon = item.querySelector('.icon svg');
-				if ((!/^[a-zA-Z0-9-_.]+ @ [a-zA-Z0-9]+$/.test(name) || icon.classList.contains('octicon-file-submodule')) && nodes[name] != undefined) {
+				if (nodes[name] != undefined) {
 					item.appendChild(nodes[name].size);
 					item.appendChild(nodes[name].download);
+				} else {
+					item.appendChild(document.createElement('td'));
+					item.appendChild(document.createElement('td'));
 				}
 			});
 		}
@@ -884,6 +887,11 @@ var sizeModule = function () {
 		key: 'allElementsAreFolders',
 		value: function allElementsAreFolders(element, index, array) {
 			return element.type === 'dir';
+		}
+	}, {
+		key: 'isSubmodule',
+		value: function isSubmodule(element) {
+			return element.type === 'file' && element.download_url === null;
 		}
 	}, {
 		key: 'getReadableSizeUnit',
