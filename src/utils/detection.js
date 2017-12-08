@@ -3,20 +3,22 @@ import XRegExp from 'xregexp/xregexp-all'
 
 const isCodeExplorer = () => {
 	const expression = '[a-zA-Z0-9-_.]+'
+
 	const regex = new XRegExp(`
-		\/${expression}
-		\/${expression}
-		((
-			\/(tree|blob)
-			\/${expression}
-			((\/${expression})+)?
-		)+|
-		\/(?<discriminator> ${expression} -?))|$
+		\/((?<username> ${expression} -?)+)\/((?<repository> ${expression} -?)+)(\/((?<discriminator> ${expression} -?)+)+)?
 	`, 'x')
 
 	const match = XRegExp.exec(window.location.pathname, regex)
 
+	if (match == null) {
+		return false
+	}
+
 	if (match.discriminator === undefined) {
+		return true
+	}
+
+	if (constants.GITHUB_ROOT_RESERVED_PATHS.indexOf(match.username) !== -1) {
 		return true
 	}
 
@@ -25,11 +27,6 @@ const isCodeExplorer = () => {
 	}
 
 	return false
-}
-
-const isNotRootReservedPath = () => {
-	const urlParts = window.location.pathname.split('/')
-	return constants.GITHUB_ROOT_RESERVED_PATHS.indexOf(urlParts[1]) === -1
 }
 
 const getUsernameAndRepo = () => {
@@ -46,6 +43,7 @@ const getUsernameAndRepo = () => {
 
 const getRepositoryParameters = () => {
 	if (isCodeExplorer()) {
+		console.log('is code explorer')
 		const url = window.location.pathname
 		let urlParts = url.split('/')
 		urlParts.shift()

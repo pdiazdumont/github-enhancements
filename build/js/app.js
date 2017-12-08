@@ -964,11 +964,20 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 var isCodeExplorer = function isCodeExplorer() {
 	var expression = '[a-zA-Z0-9-_.]+';
-	var regex = new _xregexpAll2.default('\n\t\t/' + expression + '\n\t\t/' + expression + '\n\t\t((\n\t\t\t/(tree|blob)\n\t\t\t/' + expression + '\n\t\t\t((/' + expression + ')+)?\n\t\t)+|\n\t\t/(?<discriminator> ' + expression + ' -?))|$\n\t', 'x');
+
+	var regex = new _xregexpAll2.default('\n\t\t/((?<username> ' + expression + ' -?)+)/((?<repository> ' + expression + ' -?)+)(/((?<discriminator> ' + expression + ' -?)+)+)?\n\t', 'x');
 
 	var match = _xregexpAll2.default.exec(window.location.pathname, regex);
 
+	if (match == null) {
+		return false;
+	}
+
 	if (match.discriminator === undefined) {
+		return true;
+	}
+
+	if (_constants2.default.GITHUB_ROOT_RESERVED_PATHS.indexOf(match.username) !== -1) {
 		return true;
 	}
 
@@ -977,11 +986,6 @@ var isCodeExplorer = function isCodeExplorer() {
 	}
 
 	return false;
-};
-
-var isNotRootReservedPath = function isNotRootReservedPath() {
-	var urlParts = window.location.pathname.split('/');
-	return _constants2.default.GITHUB_ROOT_RESERVED_PATHS.indexOf(urlParts[1]) === -1;
 };
 
 var getUsernameAndRepo = function getUsernameAndRepo() {
@@ -998,6 +1002,7 @@ var getUsernameAndRepo = function getUsernameAndRepo() {
 
 var getRepositoryParameters = function getRepositoryParameters() {
 	if (isCodeExplorer()) {
+		console.log('is code explorer');
 		var url = window.location.pathname;
 		var urlParts = url.split('/');
 		urlParts.shift();
