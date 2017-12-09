@@ -78,7 +78,14 @@ var constants = {
 	"GITHUB_CODE_EXPLORER_RESERVED_PATHS": ["commits", "community", "graphs", "issues", "labels", "milestones", "network", "projects", "pulls", "pulse", "wiki"],
 	"GITHUB_API_INFORMATION": "https://api.github.com/repos/${username}/${repository}",
 	"GITHUB_API_CONTENT": 'https://api.github.com/repos/${username}/${repository}/contents/${path}?ref=${branch}',
-	"GITHUB_API_TREE": 'https://api.github.com/repos/${username}/${repository}/git/trees/${branch}?recursive=1'
+	"GITHUB_API_TREE": 'https://api.github.com/repos/${username}/${repository}/git/trees/${branch}?recursive=1',
+	"PAGES": {
+		"ROOT": 0,
+		"GENERIC": 1,
+		"CODE_EXPLORER_ROOT": 2,
+		"CODE_EXPLORER_FULL": 3,
+		"CODE_EXPLORER_TOOLS": 4
+	}
 };
 
 exports.default = constants;
@@ -94,19 +101,73 @@ var _styles = __webpack_require__(2);
 
 var _styles2 = _interopRequireDefault(_styles);
 
-var _sizeModule = __webpack_require__(7);
+var _api = __webpack_require__(7);
+
+var api = _interopRequireWildcard(_api);
+
+var _detection = __webpack_require__(8);
+
+var detection = _interopRequireWildcard(_detection);
+
+var _size = __webpack_require__(9);
+
+var _size2 = _interopRequireDefault(_size);
+
+var _constants = __webpack_require__(0);
+
+var _constants2 = _interopRequireDefault(_constants);
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-_sizeModule.module.init();
+var observer = null;
+var modules = null;
 
-chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
-	window.location.reload();
-});
+start();
 
-chrome.runtime.sendMessage({
-	text: 'Generic.TabUpdated'
-});
+function start() {
+	var parameters = detection.getRepositoryParameters();
+
+	if (parameters && parameters.isCodeExplorer) {
+		var repositoryInformation = api.getRepositoryInformation(parameters.username, parameters.repository);
+
+		if (parameters.branch === undefined) {
+			parameters.branch = repositoryInformation.default_branch;
+		}
+
+		var uiSelectedBranch = document.querySelector('.branch-select-menu span').textContent;
+		if (uiSelectedBranch.indexOf('/') !== -1) {
+			parameters.branch = uiSelectedBranch;
+
+			var temporal = uiSelectedBranch.split('/');
+			temporal.shift();
+			var pathToReplace = temporal.join('/');
+
+			parameters.path = parameters.path.replace(pathToReplace, '');
+		}
+
+		var repositoryContent = api.getRepositoryContent(parameters.username, parameters.repository, parameters.branch, parameters.path);
+
+		Promise.all([repositoryInformation, repositoryContent]).then(function (responses) {
+			modules = [new _size2.default(responses[0], responses[1])];
+			modules.forEach(function (module) {
+				return module.run();
+			});
+
+			if (observer == null) {
+				var config = { attributes: false, childList: true };
+				var _observer = new MutationObserver(callback);
+				// observer.observe(document.getElementById('js-repo-pjax-container'), config)
+			}
+		});
+	}
+}
+
+var callback = function callback(mutations) {
+	start();
+	// modules.forEach(module => module.run())
+};
 
 /***/ }),
 /* 2 */
@@ -712,233 +773,51 @@ module.exports = function (css) {
 Object.defineProperty(exports, "__esModule", {
 	value: true
 });
-exports.module = undefined;
+exports.getRepositoryContent = exports.getRepositoryInformation = undefined;
 
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+var _constants = __webpack_require__(0);
 
-var _detection = __webpack_require__(8);
+var _constants2 = _interopRequireDefault(_constants);
 
-var detection = _interopRequireWildcard(_detection);
+function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-var _api = __webpack_require__(10);
+var getRepositoryInformation = function getRepositoryInformation(username, repository) {
+	return fetch(buildRequest(eval('`' + _constants2.default.GITHUB_API_INFORMATION + '`'))).then(checkResponse).then(json).catch(function (error) {
+		console.error(error);
+	});
+};
 
-var api = _interopRequireWildcard(_api);
+var getRepositoryContent = function getRepositoryContent(username, repository) {
+	var branch = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 'master';
+	var path = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '';
 
-function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+	return fetch(buildRequest(eval('`' + _constants2.default.GITHUB_API_CONTENT + '`'))).then(checkResponse).then(json).catch(function (error) {
+		console.error(error);
+	});
+};
 
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+function buildRequest(url) {
+	return new Request(url, {
+		method: 'GET',
+		headers: new Headers({
+			'Authorization': 'token 5f44b4ebc5f7e6face52c3bdae8038c665d901b8'
+		})
+	});
+}
 
-var sizeModule = function () {
-	function sizeModule() {
-		_classCallCheck(this, sizeModule);
-
-		this.repositoryParameters = detection.getRepositoryParameters();
+function checkResponse(response) {
+	if (response.ok && response.status === 200) {
+		return Promise.resolve(response);
 	}
+	return Promise.reject(new Error('Error: wrong response. "' + response.statusText + '"'));
+}
 
-	_createClass(sizeModule, [{
-		key: 'init',
-		value: function init() {
-			if (this.repositoryParameters) {
-				var repositoryInformation = api.getRepositoryInformation(this.repositoryParameters.username, this.repositoryParameters.repository).then(this.setup.bind(this)).then(this.showRepositorySize.bind(this)).then(this.getContent.bind(this));
-			}
-		}
-	}, {
-		key: 'setup',
-		value: function setup(response) {
-			if (!this.repositoryParameters.branch) {
-				this.repositoryParameters.branch = response.default_branch;
-			}
-			var uiSelectedBranch = document.querySelector('.branch-select-menu span').textContent;
-			if (uiSelectedBranch.indexOf('/') !== -1) {
-				this.fixForBranchNameWithSlashes(uiSelectedBranch);
-			}
-			this.repositoryParameters.size = response.size;
+function json(response) {
+	return response.json();
+}
 
-			return new Promise(function (resolve, reject) {
-				resolve(response);
-			});
-		}
-	}, {
-		key: 'getContent',
-		value: function getContent(response) {
-			var repositoryContent = api.getRepositoryContent(this.repositoryParameters.username, this.repositoryParameters.repository, this.repositoryParameters.branch, this.repositoryParameters.path);
-			repositoryContent.then(this.shouldContinue.bind(this)).then(this.groupAndSortElements.bind(this)).then(this.processElements.bind(this)).catch(function (error) {});
-		}
-	}, {
-		key: 'shouldContinue',
-		value: function shouldContinue(response) {
-			if (response.type === 'file') {
-				throw new Error('');
-			}
-			return new Promise(function (resolve, reject) {
-				resolve(response);
-			});
-		}
-	}, {
-		key: 'groupAndSortElements',
-		value: function groupAndSortElements(response) {
-			var folders = [],
-			    files = [],
-			    others = [];
-			var _iteratorNormalCompletion = true;
-			var _didIteratorError = false;
-			var _iteratorError = undefined;
-
-			try {
-				for (var _iterator = response[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
-					var element = _step.value;
-
-					switch (element.type) {
-						case 'file':
-							files.push(element);
-							break;
-						case 'dir':
-							folders.push(element);
-							break;
-						default:
-							others.push(element);
-					}
-				}
-			} catch (err) {
-				_didIteratorError = true;
-				_iteratorError = err;
-			} finally {
-				try {
-					if (!_iteratorNormalCompletion && _iterator.return) {
-						_iterator.return();
-					}
-				} finally {
-					if (_didIteratorError) {
-						throw _iteratorError;
-					}
-				}
-			}
-
-			var result = folders.sort(this.orderByNameAscending).concat(files.sort(this.orderByNameAscending)).concat(others.sort(this.orderByNameAscending));
-
-			return new Promise(function (resolve, reject) {
-				resolve(result);
-			});
-		}
-	}, {
-		key: 'processElements',
-		value: function processElements(elements) {
-			var _this = this;
-
-			if (elements.every(this.allElementsAreFolders)) {
-				return;
-			}
-
-			var nodes = [];
-
-			elements.forEach(function (item, index) {
-				var fileSizeNode = document.createElement('td');
-				var downloadFileNode = document.createElement('td');
-
-				if (item.type == 'file' && !_this.isSubmodule(item)) {
-					var sizeInformation = _this.getReadableSizeUnit(item.size);
-					fileSizeNode.innerHTML = '<span>' + sizeInformation.bytes + ' ' + sizeInformation.text + '</span>';
-					fileSizeNode.classList.add('file-size');
-					downloadFileNode.innerHTML = '\n\t\t\t\t\t<a href="' + item.download_url + '" class="tooltipped tooltipped-n" aria-label="Download file" download>\n\t\t\t\t\t\t<svg aria-hidden="true" class="octicon octicon-cloud-download" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M9 12h2l-3 3-3-3h2V7h2v5zm3-8c0-.44-.91-3-4.5-3C5.08 1 3 2.92 3 5 1.02 5 0 6.52 0 8c0 1.53 1 3 3 3h3V9.7H3C1.38 9.7 1.3 8.28 1.3 8c0-.17.05-1.7 1.7-1.7h1.3V5c0-1.39 1.56-2.7 3.2-2.7 2.55 0 3.13 1.55 3.2 1.8v1.2H12c.81 0 2.7.22 2.7 2.2 0 2.09-2.25 2.2-2.7 2.2h-2V11h2c2.08 0 4-1.16 4-3.5C16 5.06 14.08 4 12 4z"></path></svg>\n\t\t\t\t\t</a>';
-					downloadFileNode.classList.add('file-download');
-				}
-
-				nodes[item.name] = {
-					size: fileSizeNode,
-					download: downloadFileNode
-				};
-			});
-
-			this.appendNodes(nodes);
-
-			return elements;
-		}
-	}, {
-		key: 'appendNodes',
-		value: function appendNodes(nodes) {
-			var rows = document.querySelectorAll('table.files tbody .js-navigation-item:not(.up-tree)');
-
-			rows.forEach(function (item, index) {
-				var nameNode = item.querySelector('.content > span > a') || item.querySelector('.content > span > span');
-				var name = nameNode.getAttribute('title');
-				var icon = item.querySelector('.icon svg');
-				if (nodes[name] != undefined) {
-					item.appendChild(nodes[name].size);
-					item.appendChild(nodes[name].download);
-				} else {
-					item.appendChild(document.createElement('td'));
-					item.appendChild(document.createElement('td'));
-				}
-			});
-		}
-	}, {
-		key: 'showRepositorySize',
-		value: function showRepositorySize(response) {
-			var container = document.querySelector('.numbers-summary');
-			if (container === null) {
-				return;
-			}
-			var sizeInformation = this.getReadableSizeUnit(this.repositoryParameters.size, true);
-			var repositorySizeNode = document.createElement('li');
-			repositorySizeNode.innerHTML = '<svg class="octicon octicon-database" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path d="M6 15c-3.31 0-6-.9-6-2v-2c0-.17.09-.34.21-.5.67.86 3 1.5 5.79 1.5s5.12-.64 5.79-1.5c.13.16.21.33.21.5v2c0 1.1-2.69 2-6 2zm0-4c-3.31 0-6-.9-6-2V7c0-.11.04-.21.09-.31.03-.06.07-.13.12-.19C.88 7.36 3.21 8 6 8s5.12-.64 5.79-1.5c.05.06.09.13.12.19.05.1.09.21.09.31v2c0 1.1-2.69 2-6 2zm0-4c-3.31 0-6-.9-6-2V3c0-1.1 2.69-2 6-2s6 .9 6 2v2c0 1.1-2.69 2-6 2zm0-5c-2.21 0-4 .45-4 1s1.79 1 4 1 4-.45 4-1-1.79-1-4-1z"></path></svg><span class="num text-emphasized">' + sizeInformation.bytes + '</span> ' + sizeInformation.text;
-			container.appendChild(repositorySizeNode);
-		}
-	}, {
-		key: 'allElementsAreFolders',
-		value: function allElementsAreFolders(element, index, array) {
-			return element.type === 'dir';
-		}
-	}, {
-		key: 'isSubmodule',
-		value: function isSubmodule(element) {
-			return element.type === 'file' && element.download_url === null;
-		}
-	}, {
-		key: 'getReadableSizeUnit',
-		value: function getReadableSizeUnit(size) {
-			var isKylo = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : false;
-
-			if (isKylo) {
-				size *= 1024;
-			}
-			if (size === 0) {
-				return {
-					bytes: 0,
-					text: 'Bytes'
-				};
-			}
-			var sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'],
-			    i = Math.floor(Math.log(size) / Math.log(1024));
-			return {
-				bytes: parseFloat((size / Math.pow(1024, i)).toFixed(2)),
-				text: sizes[i]
-			};
-		}
-	}, {
-		key: 'orderByNameAscending',
-		value: function orderByNameAscending(first, second) {
-			if (first.name > second.name) return 1;
-			if (first.name < second.name) return -1;
-			return 0;
-		}
-	}, {
-		key: 'fixForBranchNameWithSlashes',
-		value: function fixForBranchNameWithSlashes(branchName) {
-			this.repositoryParameters.branch = branchName;
-
-			var temporal = branchName.split('/');
-			temporal.shift();
-			var pathToReplace = temporal.join('/');
-
-			this.repositoryParameters.path = this.repositoryParameters.path.replace(pathToReplace, '');
-		}
-	}]);
-
-	return sizeModule;
-}();
-
-var _module = new sizeModule();
-exports.module = _module;
+exports.getRepositoryInformation = getRepositoryInformation;
+exports.getRepositoryContent = getRepositoryContent;
 
 /***/ }),
 /* 8 */
@@ -950,79 +829,272 @@ exports.module = _module;
 Object.defineProperty(exports, "__esModule", {
 	value: true
 });
-exports.getRepositoryParameters = exports.getUsernameAndRepo = exports.isCodeExplorer = undefined;
+exports.getRepositoryParameters = undefined;
 
 var _constants = __webpack_require__(0);
 
 var _constants2 = _interopRequireDefault(_constants);
 
-var _xregexpAll = __webpack_require__(9);
+var _xregexpAll = __webpack_require__(11);
 
 var _xregexpAll2 = _interopRequireDefault(_xregexpAll);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-var isCodeExplorer = function isCodeExplorer() {
-	var expression = '[a-zA-Z0-9-_.]+';
+var getRepositoryParameters = function getRepositoryParameters() {
+	var repositoryParameters = {};
 
-	var regex = new _xregexpAll2.default('\n\t\t/((?<username> ' + expression + ' -?)+)/((?<repository> ' + expression + ' -?)+)(/((?<discriminator> ' + expression + ' -?)+)+)?\n\t', 'x');
+	var expression = '[a-zA-Z0-9-_.]+';
+	var regex = new _xregexpAll2.default('\n\t\t/$|\n\t\t/(?<rootFirstDiscriminator> ' + expression + ' -?)$|\n\t\t/(?<multipleFirstDiscriminator> ' + expression + ' -?)/(?<multipleSecondDiscriminator> ' + expression + ' -?)$|\n\t\t/(?<codeExplorerFullFirstDiscriminator> ' + expression + ' -?)/(?<codeExplorerFullSecondDiscriminator> ' + expression + ' -?)(/(tree|blob)/(?<codeExplorerFullThirdDiscriminator> ' + expression + ' -?)(?<codeExplorerFullFourthDiscriminator> ((/' + expression + ')+)?)+ -?)$|\n\t\t/(?<codeExplorerToolsFirstDiscriminator> ' + expression + ' -?)/(?<codeExplorerToolsSecondDiscriminator> ' + expression + ' -?)/(?<codeExplorerToolsThirdDiscriminator> ' + expression + ' -?)((/' + expression + ')+)?$\n\t', 'x');
 
 	var match = _xregexpAll2.default.exec(window.location.pathname, regex);
 
-	if (match == null) {
-		return false;
-	}
+	var type = getTypeOfPage(match);
 
-	if (match.discriminator === undefined) {
-		return true;
-	}
-
-	if (_constants2.default.GITHUB_ROOT_RESERVED_PATHS.indexOf(match.username) !== -1) {
-		return true;
-	}
-
-	if (_constants2.default.GITHUB_CODE_EXPLORER_RESERVED_PATHS.indexOf(match.discriminator) === -1) {
-		return true;
-	}
-
-	return false;
+	return getParametersForPage(type, match);
 };
 
-var getUsernameAndRepo = function getUsernameAndRepo() {
-	if (isCodeExplorer()) {
-		var urlParts = window.location.pathname.split('/');
-		urlParts.shift();
-		return {
-			username: urlParts[0],
-			repository: urlParts[1]
-		};
+function getTypeOfPage(match) {
+	if (match.rootFirstDiscriminator !== undefined) {
+		return _constants2.default.PAGES.GENERIC;
 	}
-	return false;
-};
 
-var getRepositoryParameters = function getRepositoryParameters() {
-	if (isCodeExplorer()) {
-		console.log('is code explorer');
-		var url = window.location.pathname;
-		var urlParts = url.split('/');
-		urlParts.shift();
-
-		return {
-			username: urlParts[0],
-			repository: urlParts[1],
-			branch: urlParts[3],
-			path: urlParts[4] ? url.substr(url.indexOf(urlParts[4])) : ''
-		};
+	if (match.multipleFirstDiscriminator !== undefined) {
+		return _constants2.default.PAGES.CODE_EXPLORER_ROOT;
 	}
-	return false;
-};
 
-exports.isCodeExplorer = isCodeExplorer;
-exports.getUsernameAndRepo = getUsernameAndRepo;
+	if (match.codeExplorerToolsFirstDiscriminator !== undefined) {
+		return _constants2.default.PAGES.CODE_EXPLORER_TOOLS;
+	}
+
+	if (match.codeExplorerFullFirstDiscriminator !== undefined) {
+		return _constants2.default.PAGES.CODE_EXPLORER_FULL;
+	}
+
+	return _constants2.default.PAGES.ROOT;
+}
+
+function getParametersForPage(pageType, match) {
+	switch (pageType) {
+		case _constants2.default.PAGES.ROOT:
+			return false;
+			break;
+		case _constants2.default.PAGES.GENERIC:
+			if (_constants2.default.GITHUB_ROOT_RESERVED_PATHS.indexOf(match.rootFirstDiscriminator) !== -1) {
+				return false;
+			}
+
+			return {
+				isCodeExplorer: false,
+				username: match.rootFirstDiscriminator
+			};
+			break;
+		case _constants2.default.PAGES.CODE_EXPLORER_ROOT:
+			if (_constants2.default.GITHUB_ROOT_RESERVED_PATHS.indexOf(match.multipleFirstDiscriminator) !== -1) {
+				return false;
+			}
+
+			return {
+				isCodeExplorer: true,
+				username: match.multipleFirstDiscriminator,
+				repository: match.multipleSecondDiscriminator
+			};
+			break;
+		case _constants2.default.PAGES.CODE_EXPLORER_FULL:
+			return {
+				isCodeExplorer: true,
+				username: match.codeExplorerFullFirstDiscriminator,
+				repository: match.codeExplorerFullSecondDiscriminator,
+				branch: match.codeExplorerFullThirdDiscriminator,
+				path: match.codeExplorerFullFourthDiscriminator
+			};
+			break;
+		case _constants2.default.PAGES.CODE_EXPLORER_TOOLS:
+			if (_constants2.default.GITHUB_CODE_EXPLORER_RESERVED_PATHS.indexOf(match.codeExplorerToolsThirdDiscriminator) !== -1) {
+				return false;
+			}
+
+			return {
+				isCodeExplorer: false,
+				username: match.codeExplorerToolsFirstDiscriminator,
+				repository: match.codeExplorerToolsSecondDiscriminator
+			};
+			break;
+		default:
+			return false;
+			break;
+	}
+}
+
 exports.getRepositoryParameters = getRepositoryParameters;
 
 /***/ }),
 /* 9 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+	value: true
+});
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+var _formatters = __webpack_require__(10);
+
+var formatters = _interopRequireWildcard(_formatters);
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var sizeModule = function () {
+	function sizeModule(repositoryInformation, repositoryContents) {
+		_classCallCheck(this, sizeModule);
+
+		this.repositoryInformation = repositoryInformation;
+		this.repositoryContents = repositoryContents;
+	}
+
+	_createClass(sizeModule, [{
+		key: 'run',
+		value: function run() {
+			this.displaySizeSummary();
+			this.displaySizeDetails();
+		}
+	}, {
+		key: 'displaySizeSummary',
+		value: function displaySizeSummary() {
+			var container = document.querySelector('.numbers-summary');
+
+			if (container === null) {
+				return;
+			}
+
+			var size = formatters.toReadableSize(this.repositoryInformation.size, true);
+			var sizeNode = document.createElement('li');
+			sizeNode.innerHTML = '<svg class="octicon octicon-database" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path d="M6 15c-3.31 0-6-.9-6-2v-2c0-.17.09-.34.21-.5.67.86 3 1.5 5.79 1.5s5.12-.64 5.79-1.5c.13.16.21.33.21.5v2c0 1.1-2.69 2-6 2zm0-4c-3.31 0-6-.9-6-2V7c0-.11.04-.21.09-.31.03-.06.07-.13.12-.19C.88 7.36 3.21 8 6 8s5.12-.64 5.79-1.5c.05.06.09.13.12.19.05.1.09.21.09.31v2c0 1.1-2.69 2-6 2zm0-4c-3.31 0-6-.9-6-2V3c0-1.1 2.69-2 6-2s6 .9 6 2v2c0 1.1-2.69 2-6 2zm0-5c-2.21 0-4 .45-4 1s1.79 1 4 1 4-.45 4-1-1.79-1-4-1z"></path></svg><span class="num text-emphasized">' + size.bytes + '</span> ' + size.text;
+			container.appendChild(sizeNode);
+		}
+	}, {
+		key: 'displaySizeDetails',
+		value: function displaySizeDetails() {
+			var _this = this;
+
+			if (this.isFile()) {
+				return;
+			}
+
+			if (this.isFullOfFolders()) {
+				return;
+			}
+
+			var nodes = [];
+			this.repositoryContents.forEach(function (item, index) {
+				var fileSizeNode = document.createElement('td');
+				var downloadFileNode = document.createElement('td');
+
+				if (item.type === 'file' && !_this.isSubmodule(item)) {
+					var size = formatters.toReadableSize(item.size);
+
+					fileSizeNode.innerHTML = '<span>' + size.bytes + ' ' + size.text + '</span>';
+					fileSizeNode.classList.add('file-size');
+
+					downloadFileNode.innerHTML = '\n\t\t\t\t<a href="' + item.download_url + '" class="tooltipped tooltipped-n" aria-label="Download file" download>\n\t\t\t\t\t<svg aria-hidden="true" class="octicon octicon-cloud-download" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M9 12h2l-3 3-3-3h2V7h2v5zm3-8c0-.44-.91-3-4.5-3C5.08 1 3 2.92 3 5 1.02 5 0 6.52 0 8c0 1.53 1 3 3 3h3V9.7H3C1.38 9.7 1.3 8.28 1.3 8c0-.17.05-1.7 1.7-1.7h1.3V5c0-1.39 1.56-2.7 3.2-2.7 2.55 0 3.13 1.55 3.2 1.8v1.2H12c.81 0 2.7.22 2.7 2.2 0 2.09-2.25 2.2-2.7 2.2h-2V11h2c2.08 0 4-1.16 4-3.5C16 5.06 14.08 4 12 4z"></path></svg>\n\t\t\t\t</a>';
+					downloadFileNode.classList.add('file-download');
+				}
+
+				nodes[item.name] = {
+					size: fileSizeNode,
+					download: downloadFileNode
+				};
+			});
+
+			this.appendNodes(nodes);
+		}
+	}, {
+		key: 'isFullOfFolders',
+		value: function isFullOfFolders() {
+			return this.repositoryContents.every(function (item) {
+				return item.type === 'dir';
+			});
+		}
+	}, {
+		key: 'isFile',
+		value: function isFile() {
+			return !Array.isArray(this.repositoryContents);
+		}
+	}, {
+		key: 'isSubmodule',
+		value: function isSubmodule(item) {
+			return item.type === 'file' && item.download_url === null;
+		}
+	}, {
+		key: 'appendNodes',
+		value: function appendNodes(nodes) {
+			var rows = document.querySelectorAll('table.files tbody .js-navigation-item:not(.up-tree)');
+
+			document.querySelectorAll('.file-size, .file-download, .placeholder').forEach(function (node) {
+				return node.remove();
+			});
+
+			rows.forEach(function (item, index) {
+				var nameNode = item.querySelector('.content > span > a') || item.querySelector('.content > span > span');
+				var name = nameNode.getAttribute('title');
+				var icon = item.querySelector('.icon svg');
+
+				if (nodes[name] !== undefined) {
+					item.appendChild(nodes[name].size);
+					item.appendChild(nodes[name].download);
+				} else {
+					item.appendChild(document.createElement('td', { class: 'placeholder' }));
+					item.appendChild(document.createElement('td', { class: 'placeholder' }));
+				}
+			});
+		}
+	}]);
+
+	return sizeModule;
+}();
+
+exports.default = sizeModule;
+
+/***/ }),
+/* 10 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+	value: true
+});
+var toReadableSize = function toReadableSize(size, isKylobyte) {
+	if (isKylobyte) {
+		size *= 1024;
+	}
+
+	if (size === 0) {
+		return {
+			bytes: 0,
+			text: 'Bytes'
+		};
+	}
+
+	var sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'],
+	    i = Math.floor(Math.log(size) / Math.log(1024));
+
+	return {
+		bytes: parseFloat((size / Math.pow(1024, i)).toFixed(2)),
+		text: sizes[i]
+	};
+};
+
+exports.toReadableSize = toReadableSize;
+
+/***/ }),
+/* 11 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -5139,64 +5211,6 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
             module.exports = XRegExp;
         }, {}] }, {}, [8])(8);
 });
-
-/***/ }),
-/* 10 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-	value: true
-});
-exports.getRepositoryTree = exports.getRepositoryContent = exports.getRepositoryInformation = undefined;
-
-var _constants = __webpack_require__(0);
-
-var _constants2 = _interopRequireDefault(_constants);
-
-function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-var getRepositoryInformation = function getRepositoryInformation(username, repository) {
-	return fetch(eval('`' + _constants2.default.GITHUB_API_INFORMATION + '`')).then(checkResponse).then(json).catch(function (error) {
-		console.error(error);
-	});
-};
-
-var getRepositoryContent = function getRepositoryContent(username, repository) {
-	var branch = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 'master';
-	var path = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '';
-
-	return fetch(eval('`' + _constants2.default.GITHUB_API_CONTENT + '`')).then(checkResponse).then(json).catch(function (error) {
-		console.error(error);
-	});
-};
-
-var getRepositoryTree = function getRepositoryTree(username, repository) {
-	var branch = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 'master';
-
-	return fetch(eval('`' + _constants2.default.GITHUB_API_TREE + '`')).then(checkResponse).then(json).catch(function (error) {
-		console.error('REQUEST FAILED', error);
-	});
-};
-
-function checkResponse(response) {
-	if (response.ok && response.status === 200) {
-		return Promise.resolve(response);
-	} else {
-		console.error('WRONG RESPONSE');
-		return Promise.reject(new Error(response.statusText));
-	}
-}
-
-function json(response) {
-	return response.json();
-}
-
-exports.getRepositoryInformation = getRepositoryInformation;
-exports.getRepositoryContent = getRepositoryContent;
-exports.getRepositoryTree = getRepositoryTree;
 
 /***/ })
 /******/ ]);
