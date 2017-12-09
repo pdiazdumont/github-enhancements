@@ -1,7 +1,7 @@
 import constants from "./../constants"
 
-const getRepositoryInformation = (username, repository) => {
-	return fetch(buildRequest(eval('`' + constants.GITHUB_API_INFORMATION + '`')))
+const getRepositoryInformation = (token, username, repository) => {
+	return fetch(buildRequest(eval('`' + constants.GITHUB_API_INFORMATION + '`'), token))
 		.then(checkResponse)
 		.then(json)
 		.catch((error) => {
@@ -9,8 +9,8 @@ const getRepositoryInformation = (username, repository) => {
 		})
 }
 
-const getRepositoryContent = (username, repository, branch = 'master', path = '') => {
-	return fetch(buildRequest(eval('`' + constants.GITHUB_API_CONTENT + '`')))
+const getRepositoryContent = (token, username, repository, branch = 'master', path = '') => {
+	return fetch(buildRequest(eval('`' + constants.GITHUB_API_CONTENT + '`'), token))
 		.then(checkResponse)
 		.then(json)
 		.catch((error) => {
@@ -18,11 +18,11 @@ const getRepositoryContent = (username, repository, branch = 'master', path = ''
 		})
 }
 
-function buildRequest(url) {
+function buildRequest(url, token) {
 	return new Request(url, {
 		method: 'GET',
 		headers: new Headers({
-			'Authorization': 'token 5f44b4ebc5f7e6face52c3bdae8038c665d901b8'
+			'Authorization': `token ${token}`
 		})
 	})
 }

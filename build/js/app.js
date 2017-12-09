@@ -97,6 +97,8 @@ exports.default = constants;
 "use strict";
 
 
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
 var _styles = __webpack_require__(2);
 
 var _styles2 = _interopRequireDefault(_styles);
@@ -109,65 +111,94 @@ var _detection = __webpack_require__(8);
 
 var detection = _interopRequireWildcard(_detection);
 
-var _size = __webpack_require__(9);
+var _size = __webpack_require__(10);
 
 var _size2 = _interopRequireDefault(_size);
 
-var _constants = __webpack_require__(0);
+var _config2 = __webpack_require__(14);
 
-var _constants2 = _interopRequireDefault(_constants);
+var _config3 = _interopRequireDefault(_config2);
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-var observer = null;
-var modules = null;
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-start();
+var GithubEnhancements = function () {
+	function GithubEnhancements(configuration) {
+		_classCallCheck(this, GithubEnhancements);
 
-function start() {
-	var parameters = detection.getRepositoryParameters();
-
-	if (parameters && parameters.isCodeExplorer) {
-		var repositoryInformation = api.getRepositoryInformation(parameters.username, parameters.repository);
-
-		if (parameters.branch === undefined) {
-			parameters.branch = repositoryInformation.default_branch;
-		}
-
-		var uiSelectedBranch = document.querySelector('.branch-select-menu span').textContent;
-		if (uiSelectedBranch.indexOf('/') !== -1) {
-			parameters.branch = uiSelectedBranch;
-
-			var temporal = uiSelectedBranch.split('/');
-			temporal.shift();
-			var pathToReplace = temporal.join('/');
-
-			parameters.path = parameters.path.replace(pathToReplace, '');
-		}
-
-		var repositoryContent = api.getRepositoryContent(parameters.username, parameters.repository, parameters.branch, parameters.path);
-
-		Promise.all([repositoryInformation, repositoryContent]).then(function (responses) {
-			modules = [new _size2.default(responses[0], responses[1])];
-			modules.forEach(function (module) {
-				return module.run();
-			});
-
-			if (observer == null) {
-				var config = { attributes: false, childList: true };
-				var _observer = new MutationObserver(callback);
-				// observer.observe(document.getElementById('js-repo-pjax-container'), config)
-			}
-		});
+		this.configuration = configuration;
+		this.modules = [new _size2.default()];
+		this.parameters = {};
+		this.observer = null;
 	}
-}
 
-var callback = function callback(mutations) {
-	start();
-	// modules.forEach(module => module.run())
-};
+	_createClass(GithubEnhancements, [{
+		key: 'updateParameters',
+		value: function updateParameters() {
+			this.parameters = detection.getRepositoryParameters();
+
+			if (this.parameters.isCodeExplorer) {
+				var uiSelectedBranch = document.querySelector('.branch-select-menu span').textContent;
+				this.fixForBranchesWithSlashes(uiSelectedBranch);
+				this.fixForEmptyBranch(uiSelectedBranch);
+			}
+		}
+	}, {
+		key: 'fixForBranchesWithSlashes',
+		value: function fixForBranchesWithSlashes() {
+			var uiSelectedBranch = document.querySelector('.branch-select-menu span').textContent;
+			if (uiSelectedBranch.indexOf('/') !== -1) {
+				this.parameters.branch = uiSelectedBranch;
+
+				var temporal = uiSelectedBranch.split('/');
+				temporal.shift();
+				var pathToReplace = temporal.join('/');
+
+				this.parameters.path = this.parameters.path.replace(pathToReplace, '');
+			}
+		}
+	}, {
+		key: 'fixForEmptyBranch',
+		value: function fixForEmptyBranch(selectedBranch) {
+			if (this.parameters.branch === undefined) {
+				this.parameters.branch = selectedBranch;
+			}
+		}
+	}, {
+		key: 'run',
+		value: function run() {
+			var _this = this;
+
+			this.updateParameters();
+
+			if (this.parameters.isCodeExplorer) {
+				var repositoryInformation = api.getRepositoryInformation(this.configuration.API_TOKEN, this.parameters.username, this.parameters.repository);
+				var repositoryContents = api.getRepositoryContent(this.configuration.API_TOKEN, this.parameters.username, this.parameters.repository, this.parameters.branch, this.parameters.path);
+
+				Promise.all([repositoryInformation, repositoryContents]).then(function (responses) {
+					_this.modules.forEach(function (module) {
+						module.setParameters(responses[0], responses[1]);
+						module.run();
+					});
+
+					if (_this.observer == null) {
+						var _config = { attributes: false, childList: true };
+						_this.observer = new MutationObserver(_this.run.bind(_this));
+						_this.observer.observe(document.getElementById('js-repo-pjax-container'), _config);
+					}
+				});
+			}
+		}
+	}]);
+
+	return GithubEnhancements;
+}();
+
+var app = new GithubEnhancements(_config3.default);
+app.run();
 
 /***/ }),
 /* 2 */
@@ -781,26 +812,26 @@ var _constants2 = _interopRequireDefault(_constants);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
-var getRepositoryInformation = function getRepositoryInformation(username, repository) {
-	return fetch(buildRequest(eval('`' + _constants2.default.GITHUB_API_INFORMATION + '`'))).then(checkResponse).then(json).catch(function (error) {
+var getRepositoryInformation = function getRepositoryInformation(token, username, repository) {
+	return fetch(buildRequest(eval('`' + _constants2.default.GITHUB_API_INFORMATION + '`'), token)).then(checkResponse).then(json).catch(function (error) {
 		console.error(error);
 	});
 };
 
-var getRepositoryContent = function getRepositoryContent(username, repository) {
-	var branch = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 'master';
-	var path = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : '';
+var getRepositoryContent = function getRepositoryContent(token, username, repository) {
+	var branch = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 'master';
+	var path = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : '';
 
-	return fetch(buildRequest(eval('`' + _constants2.default.GITHUB_API_CONTENT + '`'))).then(checkResponse).then(json).catch(function (error) {
+	return fetch(buildRequest(eval('`' + _constants2.default.GITHUB_API_CONTENT + '`'), token)).then(checkResponse).then(json).catch(function (error) {
 		console.error(error);
 	});
 };
 
-function buildRequest(url) {
+function buildRequest(url, token) {
 	return new Request(url, {
 		method: 'GET',
 		headers: new Headers({
-			'Authorization': 'token 5f44b4ebc5f7e6face52c3bdae8038c665d901b8'
+			'Authorization': 'token ' + token
 		})
 	});
 }
@@ -835,7 +866,7 @@ var _constants = __webpack_require__(0);
 
 var _constants2 = _interopRequireDefault(_constants);
 
-var _xregexpAll = __webpack_require__(11);
+var _xregexpAll = __webpack_require__(9);
 
 var _xregexpAll2 = _interopRequireDefault(_xregexpAll);
 
@@ -930,171 +961,6 @@ exports.getRepositoryParameters = getRepositoryParameters;
 
 /***/ }),
 /* 9 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-	value: true
-});
-
-var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-var _formatters = __webpack_require__(10);
-
-var formatters = _interopRequireWildcard(_formatters);
-
-function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-var sizeModule = function () {
-	function sizeModule(repositoryInformation, repositoryContents) {
-		_classCallCheck(this, sizeModule);
-
-		this.repositoryInformation = repositoryInformation;
-		this.repositoryContents = repositoryContents;
-	}
-
-	_createClass(sizeModule, [{
-		key: 'run',
-		value: function run() {
-			this.displaySizeSummary();
-			this.displaySizeDetails();
-		}
-	}, {
-		key: 'displaySizeSummary',
-		value: function displaySizeSummary() {
-			var container = document.querySelector('.numbers-summary');
-
-			if (container === null) {
-				return;
-			}
-
-			var size = formatters.toReadableSize(this.repositoryInformation.size, true);
-			var sizeNode = document.createElement('li');
-			sizeNode.innerHTML = '<svg class="octicon octicon-database" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path d="M6 15c-3.31 0-6-.9-6-2v-2c0-.17.09-.34.21-.5.67.86 3 1.5 5.79 1.5s5.12-.64 5.79-1.5c.13.16.21.33.21.5v2c0 1.1-2.69 2-6 2zm0-4c-3.31 0-6-.9-6-2V7c0-.11.04-.21.09-.31.03-.06.07-.13.12-.19C.88 7.36 3.21 8 6 8s5.12-.64 5.79-1.5c.05.06.09.13.12.19.05.1.09.21.09.31v2c0 1.1-2.69 2-6 2zm0-4c-3.31 0-6-.9-6-2V3c0-1.1 2.69-2 6-2s6 .9 6 2v2c0 1.1-2.69 2-6 2zm0-5c-2.21 0-4 .45-4 1s1.79 1 4 1 4-.45 4-1-1.79-1-4-1z"></path></svg><span class="num text-emphasized">' + size.bytes + '</span> ' + size.text;
-			container.appendChild(sizeNode);
-		}
-	}, {
-		key: 'displaySizeDetails',
-		value: function displaySizeDetails() {
-			var _this = this;
-
-			if (this.isFile()) {
-				return;
-			}
-
-			if (this.isFullOfFolders()) {
-				return;
-			}
-
-			var nodes = [];
-			this.repositoryContents.forEach(function (item, index) {
-				var fileSizeNode = document.createElement('td');
-				var downloadFileNode = document.createElement('td');
-
-				if (item.type === 'file' && !_this.isSubmodule(item)) {
-					var size = formatters.toReadableSize(item.size);
-
-					fileSizeNode.innerHTML = '<span>' + size.bytes + ' ' + size.text + '</span>';
-					fileSizeNode.classList.add('file-size');
-
-					downloadFileNode.innerHTML = '\n\t\t\t\t<a href="' + item.download_url + '" class="tooltipped tooltipped-n" aria-label="Download file" download>\n\t\t\t\t\t<svg aria-hidden="true" class="octicon octicon-cloud-download" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M9 12h2l-3 3-3-3h2V7h2v5zm3-8c0-.44-.91-3-4.5-3C5.08 1 3 2.92 3 5 1.02 5 0 6.52 0 8c0 1.53 1 3 3 3h3V9.7H3C1.38 9.7 1.3 8.28 1.3 8c0-.17.05-1.7 1.7-1.7h1.3V5c0-1.39 1.56-2.7 3.2-2.7 2.55 0 3.13 1.55 3.2 1.8v1.2H12c.81 0 2.7.22 2.7 2.2 0 2.09-2.25 2.2-2.7 2.2h-2V11h2c2.08 0 4-1.16 4-3.5C16 5.06 14.08 4 12 4z"></path></svg>\n\t\t\t\t</a>';
-					downloadFileNode.classList.add('file-download');
-				}
-
-				nodes[item.name] = {
-					size: fileSizeNode,
-					download: downloadFileNode
-				};
-			});
-
-			this.appendNodes(nodes);
-		}
-	}, {
-		key: 'isFullOfFolders',
-		value: function isFullOfFolders() {
-			return this.repositoryContents.every(function (item) {
-				return item.type === 'dir';
-			});
-		}
-	}, {
-		key: 'isFile',
-		value: function isFile() {
-			return !Array.isArray(this.repositoryContents);
-		}
-	}, {
-		key: 'isSubmodule',
-		value: function isSubmodule(item) {
-			return item.type === 'file' && item.download_url === null;
-		}
-	}, {
-		key: 'appendNodes',
-		value: function appendNodes(nodes) {
-			var rows = document.querySelectorAll('table.files tbody .js-navigation-item:not(.up-tree)');
-
-			document.querySelectorAll('.file-size, .file-download, .placeholder').forEach(function (node) {
-				return node.remove();
-			});
-
-			rows.forEach(function (item, index) {
-				var nameNode = item.querySelector('.content > span > a') || item.querySelector('.content > span > span');
-				var name = nameNode.getAttribute('title');
-				var icon = item.querySelector('.icon svg');
-
-				if (nodes[name] !== undefined) {
-					item.appendChild(nodes[name].size);
-					item.appendChild(nodes[name].download);
-				} else {
-					item.appendChild(document.createElement('td', { class: 'placeholder' }));
-					item.appendChild(document.createElement('td', { class: 'placeholder' }));
-				}
-			});
-		}
-	}]);
-
-	return sizeModule;
-}();
-
-exports.default = sizeModule;
-
-/***/ }),
-/* 10 */
-/***/ (function(module, exports, __webpack_require__) {
-
-"use strict";
-
-
-Object.defineProperty(exports, "__esModule", {
-	value: true
-});
-var toReadableSize = function toReadableSize(size, isKylobyte) {
-	if (isKylobyte) {
-		size *= 1024;
-	}
-
-	if (size === 0) {
-		return {
-			bytes: 0,
-			text: 'Bytes'
-		};
-	}
-
-	var sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'],
-	    i = Math.floor(Math.log(size) / Math.log(1024));
-
-	return {
-		bytes: parseFloat((size / Math.pow(1024, i)).toFixed(2)),
-		text: sizes[i]
-	};
-};
-
-exports.toReadableSize = toReadableSize;
-
-/***/ }),
-/* 11 */
 /***/ (function(module, exports, __webpack_require__) {
 
 "use strict";
@@ -5211,6 +5077,191 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
             module.exports = XRegExp;
         }, {}] }, {}, [8])(8);
 });
+
+/***/ }),
+/* 10 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+	value: true
+});
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+var _formatters = __webpack_require__(11);
+
+var formatters = _interopRequireWildcard(_formatters);
+
+function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var sizeModule = function () {
+	function sizeModule() {
+		_classCallCheck(this, sizeModule);
+	}
+
+	_createClass(sizeModule, [{
+		key: 'setParameters',
+		value: function setParameters(repositoryInformation, repositoryContents) {
+			this.repositoryInformation = repositoryInformation;
+			this.repositoryContents = repositoryContents;
+		}
+	}, {
+		key: 'run',
+		value: function run() {
+			this.displaySizeSummary();
+			this.displaySizeDetails();
+		}
+	}, {
+		key: 'displaySizeSummary',
+		value: function displaySizeSummary() {
+			var container = document.querySelector('.numbers-summary');
+
+			if (container === null) {
+				return;
+			}
+
+			var currentSizeNode = document.querySelector('.size-summary');
+			if (currentSizeNode !== null) {
+				currentSizeNode.remove();
+			}
+
+			var size = formatters.toReadableSize(this.repositoryInformation.size, true);
+			var sizeNode = document.createElement('li');
+			sizeNode.classList.add('size-summary');
+			sizeNode.innerHTML = '<svg class="octicon octicon-database" aria-hidden="true" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path d="M6 15c-3.31 0-6-.9-6-2v-2c0-.17.09-.34.21-.5.67.86 3 1.5 5.79 1.5s5.12-.64 5.79-1.5c.13.16.21.33.21.5v2c0 1.1-2.69 2-6 2zm0-4c-3.31 0-6-.9-6-2V7c0-.11.04-.21.09-.31.03-.06.07-.13.12-.19C.88 7.36 3.21 8 6 8s5.12-.64 5.79-1.5c.05.06.09.13.12.19.05.1.09.21.09.31v2c0 1.1-2.69 2-6 2zm0-4c-3.31 0-6-.9-6-2V3c0-1.1 2.69-2 6-2s6 .9 6 2v2c0 1.1-2.69 2-6 2zm0-5c-2.21 0-4 .45-4 1s1.79 1 4 1 4-.45 4-1-1.79-1-4-1z"></path></svg><span class="num text-emphasized">' + size.bytes + '</span> ' + size.text;
+			container.appendChild(sizeNode);
+		}
+	}, {
+		key: 'displaySizeDetails',
+		value: function displaySizeDetails() {
+			var _this = this;
+
+			if (this.isFile()) {
+				return;
+			}
+
+			if (this.isFullOfFolders()) {
+				return;
+			}
+
+			var nodes = [];
+			this.repositoryContents.forEach(function (item, index) {
+				var fileSizeNode = document.createElement('td');
+				var downloadFileNode = document.createElement('td');
+
+				if (item.type === 'file' && !_this.isSubmodule(item)) {
+					var size = formatters.toReadableSize(item.size);
+
+					fileSizeNode.innerHTML = '<span>' + size.bytes + ' ' + size.text + '</span>';
+					fileSizeNode.classList.add('file-size');
+
+					downloadFileNode.innerHTML = '\n\t\t\t\t<a href="' + item.download_url + '" class="tooltipped tooltipped-n" aria-label="Download file" download>\n\t\t\t\t\t<svg aria-hidden="true" class="octicon octicon-cloud-download" height="16" version="1.1" viewBox="0 0 16 16" width="16"><path fill-rule="evenodd" d="M9 12h2l-3 3-3-3h2V7h2v5zm3-8c0-.44-.91-3-4.5-3C5.08 1 3 2.92 3 5 1.02 5 0 6.52 0 8c0 1.53 1 3 3 3h3V9.7H3C1.38 9.7 1.3 8.28 1.3 8c0-.17.05-1.7 1.7-1.7h1.3V5c0-1.39 1.56-2.7 3.2-2.7 2.55 0 3.13 1.55 3.2 1.8v1.2H12c.81 0 2.7.22 2.7 2.2 0 2.09-2.25 2.2-2.7 2.2h-2V11h2c2.08 0 4-1.16 4-3.5C16 5.06 14.08 4 12 4z"></path></svg>\n\t\t\t\t</a>';
+					downloadFileNode.classList.add('file-download');
+				} else {
+					fileSizeNode.classList.add('placeholder');
+					downloadFileNode.classList.add('placeholder');
+				}
+
+				nodes[item.name] = {
+					size: fileSizeNode,
+					download: downloadFileNode
+				};
+			});
+
+			this.appendNodes(nodes);
+		}
+	}, {
+		key: 'isFullOfFolders',
+		value: function isFullOfFolders() {
+			return this.repositoryContents.every(function (item) {
+				return item.type === 'dir';
+			});
+		}
+	}, {
+		key: 'isFile',
+		value: function isFile() {
+			return !Array.isArray(this.repositoryContents);
+		}
+	}, {
+		key: 'isSubmodule',
+		value: function isSubmodule(item) {
+			return item.type === 'file' && item.download_url === null;
+		}
+	}, {
+		key: 'appendNodes',
+		value: function appendNodes(nodes) {
+			var rows = document.querySelectorAll('table.files tbody .js-navigation-item:not(.up-tree)');
+
+			document.querySelectorAll('.file-size, .file-download, .placeholder').forEach(function (node) {
+				return node.remove();
+			});
+
+			rows.forEach(function (item, index) {
+				var nameNode = item.querySelector('.content > span > a') || item.querySelector('.content > span > span');
+				var name = nameNode.getAttribute('title');
+				var icon = item.querySelector('.icon svg');
+
+				if (nodes[name] !== undefined) {
+					item.appendChild(nodes[name].size);
+					item.appendChild(nodes[name].download);
+				} else {
+					item.appendChild(document.createElement('td', { class: 'placeholder' }));
+					item.appendChild(document.createElement('td', { class: 'placeholder' }));
+				}
+			});
+		}
+	}]);
+
+	return sizeModule;
+}();
+
+exports.default = sizeModule;
+
+/***/ }),
+/* 11 */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+Object.defineProperty(exports, "__esModule", {
+	value: true
+});
+var toReadableSize = function toReadableSize(size, isKylobyte) {
+	if (isKylobyte) {
+		size *= 1024;
+	}
+
+	if (size === 0) {
+		return {
+			bytes: 0,
+			text: 'Bytes'
+		};
+	}
+
+	var sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'],
+	    i = Math.floor(Math.log(size) / Math.log(1024));
+
+	return {
+		bytes: parseFloat((size / Math.pow(1024, i)).toFixed(2)),
+		text: sizes[i]
+	};
+};
+
+exports.toReadableSize = toReadableSize;
+
+/***/ }),
+/* 12 */,
+/* 13 */,
+/* 14 */
+/***/ (function(module, exports) {
+
+module.exports = {"API_TOKEN":"dc4b8dfdafc96ab00135e4f6e92ac2bcd82dd6f8"}
 
 /***/ })
 /******/ ]);

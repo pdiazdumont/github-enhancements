@@ -2,54 +2,71 @@ import styles from './styles.scss'
 import * as api from './utils/api'
 import * as detection from './utils/detection'
 import sizeModule from './modules/size'
-import constants from './constants'
+import config from './config.json'
 
-const observer = null
-let modules = null
+class GithubEnhancements {
+	constructor(configuration) {
+		this.configuration = configuration
+		this.modules = [
+			new sizeModule()
+		]
+		this.parameters = {}
+		this.observer = null
+	}
 
-start()
-
-function start() {
-	const parameters = detection.getRepositoryParameters()
-	
-	if (parameters && parameters.isCodeExplorer) {
-		const repositoryInformation = api.getRepositoryInformation(parameters.username, parameters.repository)
-
-		if (parameters.branch === undefined) {
-			parameters.branch = repositoryInformation.default_branch
+	updateParameters() {
+		this.parameters = detection.getRepositoryParameters()
+		
+		if (this.parameters.isCodeExplorer) {
+			const uiSelectedBranch = document.querySelector('.branch-select-menu span').textContent
+			this.fixForBranchesWithSlashes(uiSelectedBranch)
+			this.fixForEmptyBranch(uiSelectedBranch)
 		}
+	}
 
+	fixForBranchesWithSlashes() {
 		const uiSelectedBranch = document.querySelector('.branch-select-menu span').textContent
 		if (uiSelectedBranch.indexOf('/') !== -1) {
-			parameters.branch = uiSelectedBranch
+			this.parameters.branch = uiSelectedBranch
 
 			let temporal = uiSelectedBranch.split('/')
 			temporal.shift()
 			const pathToReplace = temporal.join('/')
 	
-			parameters.path = parameters.path.replace(pathToReplace, '')
+			this.parameters.path = this.parameters.path.replace(pathToReplace, '')
 		}
+	}
 
-		const repositoryContent = api.getRepositoryContent(parameters.username, parameters.repository, parameters.branch, parameters.path)
-		
-		Promise
-			.all([repositoryInformation, repositoryContent])
-			.then(responses => {
-				modules = [
-					new sizeModule(responses[0], responses[1])
-				]
-				modules.forEach(module => module.run())
-		
-				if (observer == null) {
-					const config = { attributes: false, childList: true }
-					const observer = new MutationObserver(callback)
-					// observer.observe(document.getElementById('js-repo-pjax-container'), config)
-				}
-			})
+	fixForEmptyBranch(selectedBranch) {
+		if (this.parameters.branch === undefined) {
+			this.parameters.branch = selectedBranch
+		}
+	}
+
+	run() {
+		this.updateParameters()
+
+		if (this.parameters.isCodeExplorer) {
+			const repositoryInformation = api.getRepositoryInformation(this.configuration.API_TOKEN, this.parameters.username, this.parameters.repository)
+			const repositoryContents = api.getRepositoryContent(this.configuration.API_TOKEN, this.parameters.username, this.parameters.repository, this.parameters.branch, this.parameters.path)
+	
+			Promise
+				.all([repositoryInformation, repositoryContents])
+				.then(responses => {
+					this.modules.forEach(module => {
+						module.setParameters(responses[0], responses[1])
+						module.run()
+					})
+			
+					if (this.observer == null) {
+						const config = { attributes: false, childList: true }
+						this.observer = new MutationObserver(this.run.bind(this))
+						this.observer.observe(document.getElementById('js-repo-pjax-container'), config)
+					}
+				})
+		}
 	}
 }
 
-const callback = function(mutations) {
-	start()
-	// modules.forEach(module => module.run())
-}
+const app = new GithubEnhancements(config)
+app.run()
