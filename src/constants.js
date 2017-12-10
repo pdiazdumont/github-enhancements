@@ -15,6 +15,7 @@ const constants = {
 		"features",
 		"blog",
 		"about",
+		"settings"
 	],
 	"GITHUB_CODE_EXPLORER_RESERVED_PATHS": [
 		"commits",

@@ -68,6 +68,7 @@ export default class sizeModule {
 		})
 
 		this.appendNodes(nodes)
+		this.addPlaceholdersForUpTree(nodes)
 	}
 	
 	isFullOfFolders() {
@@ -97,9 +98,33 @@ export default class sizeModule {
 				item.appendChild(nodes[name].download)
 			}
 			else {
-				item.appendChild(document.createElement('td', { class: 'placeholder' }))
-				item.appendChild(document.createElement('td', { class: 'placeholder' }))
+				item.appendChild(this.createPlaceholder())
+				item.appendChild(this.createPlaceholder())
 			}
 		})
+	}
+
+	createPlaceholder() {
+		const node = document.createElement('td')
+		node.classList.add('placeholder')
+		return node
+	}
+
+	addPlaceholdersForUpTree(nodes) {
+		const upTreeNode = document.querySelector('table.files tbody .js-navigation-item.up-tree')
+		if (upTreeNode === null) {
+			return
+		}
+
+		let numberOfPlaceholders = 0
+		Object.keys(nodes).forEach(key => {
+			if (nodes[key].size.classList.contains('placeholder')) {
+				numberOfPlaceholders++
+			}
+		})
+
+		for (let i = 0; i < numberOfPlaceholders; i++) {
+			upTreeNode.appendChild(this.createPlaceholder())
+		}
 	}
 }
