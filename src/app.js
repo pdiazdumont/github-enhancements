@@ -1,16 +1,15 @@
 import styles from './styles.scss'
 import * as api from './utils/api'
 import * as detection from './utils/detection'
+import * as userSettings from './utils/userSettings'
 import sizeModule from './modules/size'
 import uiModule from './modules/ui'
 import config from './config.json'
 
-import * as userSettings from './utils/userSettings'
-
 class GithubEnhancements {
 	constructor(configuration) {
-		this.userSettings = null
 		this.configuration = configuration
+		this.userSettings = null
 		this.modules = [
 			new sizeModule(),
 			new uiModule()
@@ -24,6 +23,7 @@ class GithubEnhancements {
 		
 		if (this.parameters.isCodeExplorer) {
 			const uiSelectedBranch = document.querySelector('.branch-select-menu span').textContent
+
 			this.fixForBranchesWithSlashes(uiSelectedBranch)
 			this.fixForEmptyBranch(uiSelectedBranch)
 		}
@@ -82,12 +82,12 @@ class GithubEnhancements {
 				module.setSettings(this.userSettings.modules[module.key])
 			})
 		})
+
 		window.addEventListener('DOMContentLoaded', () => {
 			this.run()
 		})
 	}
 }
-
 
 const app = new GithubEnhancements(config)
 app.setup()

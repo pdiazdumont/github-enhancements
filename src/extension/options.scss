@@ -1,0 +1,30 @@
+* {
+	box-sizing: border-box;
+}
+
+body {
+	background: #27233e;
+}
+
+.container {
+	margin: 0 auto;
+	width: 980px;
+}
+
+.option {
+	background: #2e2b45;
+	border-left: 6px solid #006aff;
+	border-radius: 4px;
+	box-shadow: 0 7px 10px -10px #000000;
+	margin-bottom: 20px;
+	padding: 10px 5px;
+	transition: all 0.3s ease-in-out;
+
+	label {
+		color: #ffffff;
+	}
+
+	&.is-active {
+		background: linear-gradient(to right, #39306a, #793d7d 45%);
+	}
+}

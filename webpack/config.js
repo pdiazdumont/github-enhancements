@@ -6,7 +6,9 @@ module.exports = {
 	entry: {
 		app: "./src/app.js",
 		"hotReload": "./src/extension/hotReload.js",
-		"background": "./src/extension/background.js"
+		"background": "./src/extension/background.js",
+		"optionsPage": "./src/extension/options.html",
+		"options": "./src/extension/options.js"
 	},
 	output: {
 		path: path.resolve(__dirname, "../build"),
@@ -16,11 +18,9 @@ module.exports = {
 	watch: true,
 	module: {
 		rules: [
-			{
-				test: /\.scss$/,
-				use: ExtractTextPlugin.extract({ fallback: "style-loader", use: ["css-loader", "sass-loader"] })
-			},
-			{ test: /\.js$/, use: "babel-loader", exclude: "/node_modules" }
+			{ test: /\.scss$/, use: ExtractTextPlugin.extract({ fallback: "style-loader", use: ["css-loader", "sass-loader"] }) },
+			{ test: /\.js$/, use: "babel-loader", exclude: "/node_modules" },
+			{ test: /\.html$/, loader: "file-loader", options: { name: '[name].[ext]' } }
 		]
 	},
 	plugins: [
@@ -29,7 +29,7 @@ module.exports = {
 			template: path.resolve(__dirname, "../src/extension/manifest.json"),
 			outputFile: path.resolve(__dirname, "../build/manifest.json")
 		}),
-		new ExtractTextPlugin("css/app.css")
+		new ExtractTextPlugin("css/[name].css")
 	],
 	resolve: {
 		modules: [path.resolve(__dirname, "src"), "./node_modules"],
