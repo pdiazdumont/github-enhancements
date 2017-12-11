@@ -1,6 +1,19 @@
 import * as formatters from './../utils/formatters'
 
 export default class sizeModule {
+	constructor() {
+		this.key = 'size'
+		this.settings = null
+	}
+
+	isIndependent() {
+		return false
+	}
+
+	setSettings(settings) {
+		this.settings = settings
+	}
+
 	setParameters(repositoryInformation, repositoryContents) {
 		this.repositoryInformation = repositoryInformation
 		this.repositoryContents = repositoryContents
@@ -68,7 +81,7 @@ export default class sizeModule {
 		})
 
 		this.appendNodes(nodes)
-		this.addPlaceholdersForUpTree(nodes)
+		this.appendPlaceholdersForUpTree(nodes)
 	}
 	
 	isFullOfFolders() {
@@ -110,21 +123,13 @@ export default class sizeModule {
 		return node
 	}
 
-	addPlaceholdersForUpTree(nodes) {
+	appendPlaceholdersForUpTree(nodes) {
 		const upTreeNode = document.querySelector('table.files tbody .js-navigation-item.up-tree')
 		if (upTreeNode === null) {
 			return
 		}
 
-		let numberOfPlaceholders = 0
-		Object.keys(nodes).forEach(key => {
-			if (nodes[key].size.classList.contains('placeholder')) {
-				numberOfPlaceholders++
-			}
-		})
-
-		for (let i = 0; i < numberOfPlaceholders; i++) {
-			upTreeNode.appendChild(this.createPlaceholder())
-		}
+		upTreeNode.appendChild(this.createPlaceholder())
+		upTreeNode.appendChild(this.createPlaceholder())
 	}
 }

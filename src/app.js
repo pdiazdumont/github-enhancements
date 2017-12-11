@@ -2,13 +2,18 @@ import styles from './styles.scss'
 import * as api from './utils/api'
 import * as detection from './utils/detection'
 import sizeModule from './modules/size'
+import uiModule from './modules/ui'
 import config from './config.json'
+
+import * as userSettings from './utils/userSettings'
 
 class GithubEnhancements {
 	constructor(configuration) {
+		this.userSettings = null
 		this.configuration = configuration
 		this.modules = [
-			new sizeModule()
+			new sizeModule(),
+			new uiModule()
 		]
 		this.parameters = {}
 		this.observer = null
@@ -44,6 +49,8 @@ class GithubEnhancements {
 	}
 
 	run() {
+		this.modules.filter(module => module.isIndependent()).forEach(module => module.run())
+
 		this.updateParameters()
 
 		if (this.parameters.isCodeExplorer) {
@@ -53,7 +60,7 @@ class GithubEnhancements {
 			Promise
 				.all([repositoryInformation, repositoryContents])
 				.then(responses => {
-					this.modules.forEach(module => {
+					this.modules.filter(module => !module.isIndependent()).forEach(module => {
 						module.setParameters(responses[0], responses[1])
 						module.run()
 					})
@@ -66,7 +73,21 @@ class GithubEnhancements {
 				})
 		}
 	}
+
+	setup() {
+		userSettings.getUserSettings().then(result => {
+			this.userSettings = result.userSettings
+
+			this.modules.forEach(module => {
+				module.setSettings(this.userSettings.modules[module.key])
+			})
+		})
+		window.addEventListener('DOMContentLoaded', () => {
+			this.run()
+		})
+	}
 }
 
+
 const app = new GithubEnhancements(config)
-app.run()
+app.setup()

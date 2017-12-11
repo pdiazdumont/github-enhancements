@@ -9,9 +9,13 @@
 	"content_scripts": [
 		{
 			"matches": ["https://github.com/*"],
+			"css": ["css/app.css"]
+		},
+		{
+			"matches": ["https://github.com/*"],
 			"js": ["js/app.js"],
-			"run_at": "document_end"
+			"run_at": "document_start"
 		}
 	],
-	"permissions": ["webNavigation", "tabs", "activeTab"]
+	"permissions": ["webNavigation", "tabs", "activeTab", "storage"]
 }
