@@ -20,7 +20,7 @@ class GithubEnhancements {
 
 	updateParameters() {
 		this.parameters = detection.getRepositoryParameters()
-		
+
 		if (this.parameters.isCodeExplorer) {
 			const uiSelectedBranch = document.querySelector('.branch-select-menu span').textContent
 
@@ -37,7 +37,7 @@ class GithubEnhancements {
 			let temporal = uiSelectedBranch.split('/')
 			temporal.shift()
 			const pathToReplace = temporal.join('/')
-	
+
 			this.parameters.path = this.parameters.path.replace(pathToReplace, '')
 		}
 	}
@@ -56,7 +56,7 @@ class GithubEnhancements {
 		if (this.parameters.isCodeExplorer) {
 			const repositoryInformation = api.getRepositoryInformation(this.configuration.API_TOKEN, this.parameters.username, this.parameters.repository)
 			const repositoryContents = api.getRepositoryContent(this.configuration.API_TOKEN, this.parameters.username, this.parameters.repository, this.parameters.branch, this.parameters.path)
-	
+
 			Promise
 				.all([repositoryInformation, repositoryContents])
 				.then(responses => {
@@ -64,13 +64,18 @@ class GithubEnhancements {
 						module.setParameters(responses[0], responses[1])
 						module.run()
 					})
-			
+
 					if (this.observer == null) {
 						const config = { attributes: false, childList: true }
 						this.observer = new MutationObserver(this.run.bind(this))
 						this.observer.observe(document.getElementById('js-repo-pjax-container'), config)
 					}
 				})
+		}
+		else {
+			if (this.observer != null) {
+				this.observer.disconnect()
+			}
 		}
 	}
 
